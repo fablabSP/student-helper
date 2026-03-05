@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SP Student Helper Timesheet</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f14;--surface:#141720;--surface2:#1c2030;--surface3:#232840;
+  --border:#2a3050;--border2:#3a4568;--accent:#4f8ef7;--accent2:#7c3aed;
+  --accent-glow:rgba(79,142,247,0.18);--green:#22c55e;--green-dim:rgba(34,197,94,0.15);
+  --red:#ef4444;--red-dim:rgba(239,68,68,0.15);--amber:#f59e0b;--amber-dim:rgba(245,158,11,0.15);
+  --text:#e8ecf8;--text2:#9aa5c4;--text3:#5a6585;--radius:12px;
+  --shadow:0 8px 32px rgba(0,0,0,0.4);--font:'Outfit',sans-serif;--mono:'DM Mono',monospace;
+}
+.light{--bg:#f0f2f8;--surface:#fff;--surface2:#f8f9fd;--surface3:#eef0f8;--border:#d4d9ef;--border2:#b8c0dc;--accent:#2563eb;--accent2:#7c3aed;--accent-glow:rgba(37,99,235,0.12);--green:#16a34a;--green-dim:rgba(22,163,74,0.1);--red:#dc2626;--red-dim:rgba(220,38,38,0.1);--amber:#d97706;--amber-dim:rgba(217,119,6,0.1);--text:#1a1f35;--text2:#4a5578;--text3:#8a94b2;--shadow:0 4px 20px rgba(0,0,0,0.08);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;transition:background .3s,color .3s;overflow-x:hidden;}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;}
+.topbar-brand{display:flex;align-items:center;gap:10px;}
+.topbar-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;}
+.topbar-title{font-size:15px;font-weight:600;color:var(--text);}
+.topbar-sub{font-size:11px;color:var(--text3);letter-spacing:.5px;}
+.topbar-actions{display:flex;align-items:center;gap:8px;}
+.btn-icon{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:16px;transition:all .2s;}
+.btn-icon:hover{background:var(--surface3);color:var(--text);}
+.view{display:none;padding-top:60px;}
+.view.active{display:block;}
+.landing{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse 80% 60% at 50% 0%,var(--accent-glow),transparent 70%);padding:80px 24px 60px;}
+.landing-badge{background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:6px 16px;font-size:11px;font-weight:500;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:32px;}
+.landing h1{font-size:clamp(32px,6vw,64px);font-weight:700;text-align:center;line-height:1.1;margin-bottom:16px;}
+.landing h1 span{color:var(--accent);}
+.landing p{text-align:center;color:var(--text2);font-size:16px;max-width:500px;line-height:1.7;margin-bottom:48px;}
+.landing-cards{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;}
+.role-card{width:260px;padding:28px 24px;border-radius:16px;background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:all .25s;text-align:left;position:relative;overflow:hidden;}
+.role-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transform:scaleX(0);transition:transform .25s;}
+.role-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:var(--shadow);}
+.role-card:hover::before{transform:scaleX(1);}
+.role-icon{font-size:32px;margin-bottom:14px;}
+.role-card h3{font-size:17px;font-weight:600;margin-bottom:6px;}
+.role-card p{font-size:13px;color:var(--text2);line-height:1.5;}
+.modal-backdrop{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;width:100%;max-width:440px;box-shadow:var(--shadow);animation:slideUp .25s ease;margin:auto;}
+.modal-wide{max-width:820px;}
+.modal-detail{max-width:900px;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.modal h2{font-size:20px;font-weight:700;margin-bottom:6px;}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;letter-spacing:.4px;text-transform:uppercase;}
+.form-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:var(--accent);}
+select.form-input{cursor:pointer;}
+.btn-primary{width:100%;padding:12px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s;}
+.btn-primary:hover{opacity:.9;}
+.btn-secondary{padding:9px 18px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;}
+.btn-secondary:hover{border-color:var(--border2);background:var(--surface3);}
+.error-msg{color:var(--red);font-size:12px;margin-top:6px;display:none;}
+.error-msg.show{display:block;}
+.student-container{max-width:960px;margin:0 auto;padding:24px;}
+.staff-container{max-width:1100px;margin:0 auto;padding:24px;}
+.page-header{margin-bottom:24px;}
+.page-header h2{font-size:22px;font-weight:700;}
+.page-header p{font-size:13px;color:var(--text2);margin-top:4px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:18px;}
+.card-title{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+.ts-table{width:100%;border-collapse:collapse;font-size:13px;}
+.ts-table th{background:var(--surface3);color:var(--text2);font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:10px 10px;text-align:left;border-bottom:1px solid var(--border);}
+.ts-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.ts-table tr:last-child td{border-bottom:none;}
+.ts-table tr.weekend td{background:var(--surface2);color:var(--text3);}
+.ts-table tr.public-holiday td{background:rgba(245,158,11,0.06);color:var(--text3);}
+.ts-table tr.filled td{background:rgba(79,142,247,0.04);}
+.ver-badge{color:var(--accent);font-weight:600;cursor:pointer;border-bottom:1px dashed var(--accent);transition:opacity .15s;}
+.ver-badge:hover{opacity:.75;}
+.changelog{display:flex;flex-direction:column;gap:0;max-height:60vh;overflow-y:auto;padding-right:4px;}
+.cl-version{padding:16px 0;border-bottom:1px solid var(--border);}
+.cl-version:last-child{border-bottom:none;}
+.cl-version.current .cl-ver-header{margin-bottom:10px;}
+.cl-ver-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.cl-tag{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-glow);padding:2px 10px;border-radius:20px;border:1px solid var(--accent);}
+.cl-date{font-size:11px;color:var(--text3);}
+.cl-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:20px;}
+.cl-label.latest{background:var(--green-dim);color:var(--green);border:1px solid var(--green);}
+.cl-items{list-style:none;display:flex;flex-direction:column;gap:5px;padding-left:4px;}
+.cl-items li{font-size:12px;color:var(--text2);padding-left:14px;position:relative;line-height:1.5;}
+.cl-items li::before{content:'·';position:absolute;left:0;color:var(--accent);font-weight:700;}
+.ph-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:var(--amber-dim);color:var(--amber);letter-spacing:.2px;white-space:nowrap;vertical-align:middle;}
+.verify-stamp{display:flex;align-items:center;gap:16px;background:var(--green-dim);border:1px solid var(--green);border-radius:10px;padding:14px 18px;}
+.stamp-sig{max-height:52px;max-width:160px;border-bottom:1px solid var(--green);padding-bottom:4px;}
+.stamp-sig-placeholder{font-size:28px;line-height:1;}
+.stamp-verified{font-size:13px;font-weight:600;color:var(--green);}
+.stamp-date{font-size:11px;color:var(--text2);margin-top:3px;}
+.ts-row-check{width:16px;height:16px;cursor:pointer;accent-color:var(--accent);}
+.select-all-th{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2);cursor:pointer;}
+.select-all-th input{accent-color:var(--accent);}
+.time-select{padding:5px 7px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:12px;outline:none;cursor:pointer;transition:border-color .2s;}
+.time-select:focus{border-color:var(--accent);}
+.time-select:disabled{opacity:.32;cursor:not-allowed;}
+.hours-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-family:var(--mono);font-size:12px;font-weight:500;}
+.hours-badge.has{background:var(--green-dim);color:var(--green);}
+.hours-badge.none{background:var(--surface3);color:var(--text3);}
+.remark-input{width:100%;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:12px;outline:none;resize:none;}
+.remark-input:focus{border-color:var(--accent);}
+.remark-input:disabled{opacity:.32;cursor:not-allowed;}
+.ts-totals{display:flex;gap:14px;flex-wrap:wrap;padding:16px 0 0;}
+.ts-total-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;flex:1;min-width:130px;}
+.ts-total-label{font-size:10px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;}
+.ts-total-value{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--accent);}
+.ts-total-sub{font-size:11px;color:var(--text2);}
+.btn-submit{padding:11px 28px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-submit:hover{opacity:.9;transform:translateY(-1px);}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.3px;}
+.status-pending{background:var(--amber-dim);color:var(--amber);}
+.status-approved{background:var(--green-dim);color:var(--green);}
+.status-rejected{background:var(--red-dim);color:var(--red);}
+.dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;background:var(--accent-glow);}
+.stat-label{font-size:10px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.stat-value{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--accent);}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:3px;}
+.staff-tabs{display:flex;gap:4px;margin-bottom:18px;}
+.staff-tab{padding:8px 16px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:.2s;}
+.staff-tab.active{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+.staff-tab:hover:not(.active){color:var(--text);}
+.staff-tab-panel{display:none;}
+.staff-tab-panel.active{display:block;}
+.bulk-bar{background:var(--surface2);border:1px solid var(--accent);border-radius:10px;padding:11px 16px;display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.bulk-label{font-size:13px;color:var(--text2);flex:1;}
+.bulk-label strong{color:var(--accent);}
+.submission-list{display:flex;flex-direction:column;gap:9px;}
+.submission-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;transition:border-color .2s;}
+.submission-item.selected{border-color:var(--accent);background:rgba(79,142,247,0.04);}
+.sub-check{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.sub-info{flex:1;min-width:160px;cursor:pointer;}
+.sub-info:hover .sub-name{color:var(--accent);}
+.sub-name{font-size:14px;font-weight:600;transition:color .15s;}
+.sub-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.sub-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.btn-sm{padding:6px 12px;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.btn-sm:disabled{opacity:.32;cursor:not-allowed;pointer-events:none;}
+.btn-approve{background:var(--green-dim);color:var(--green);border:1px solid var(--green);}
+.btn-approve:hover:not(:disabled){background:var(--green);color:#fff;}
+.btn-reject{background:var(--red-dim);color:var(--red);border:1px solid var(--red);}
+.btn-reject:hover:not(:disabled){background:var(--red);color:#fff;}
+.btn-pdf{background:var(--surface3);color:var(--text2);border:1px solid var(--border);}
+.btn-pdf:hover:not(:disabled){background:var(--surface2);color:var(--text);}
+.btn-email{background:rgba(79,142,247,0.1);color:var(--accent);border:1px solid var(--accent);}
+.btn-email:hover:not(:disabled){background:var(--accent);color:#fff;}
+.btn-email-fin{background:rgba(124,58,237,0.1);color:var(--accent2);border:1px solid var(--accent2);}
+.btn-email-fin:hover:not(:disabled){background:var(--accent2);color:#fff;}
+.btn-amend{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber);}
+.btn-amend:hover:not(:disabled){background:var(--amber);color:#fff;}
+.btn-view{background:var(--surface3);color:var(--text2);border:1px solid var(--border2);}
+.btn-view:hover{background:var(--surface2);color:var(--text);}
+.detail-hg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+@media(max-width:600px){.detail-hg{grid-template-columns:1fr 1fr;}}
+.detail-field{background:var(--surface2);border-radius:8px;padding:10px 14px;}
+.detail-field label{font-size:10px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:3px;}
+.detail-field span{font-size:13px;font-weight:500;}
+.sig-zone{border:2px dashed var(--border);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:.2s;background:var(--surface2);}
+.sig-zone:hover{border-color:var(--accent);background:var(--accent-glow);}
+.sig-preview{max-width:200px;max-height:80px;margin-top:10px;}
+.rate-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.rate-input-wrap{display:flex;align-items:center;}
+.rate-prefix{padding:10px 12px;background:var(--surface3);border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;color:var(--text2);font-size:14px;}
+.rate-input{padding:10px 14px;border-radius:0 10px 10px 0;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--mono);font-size:14px;width:100px;outline:none;}
+.rate-input:focus{border-color:var(--accent);}
+.confirm-list{list-style:none;margin:14px 0;}
+.confirm-list li{padding:9px 13px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:13px;display:flex;justify-content:space-between;}
+.confirm-list li span{color:var(--text2);}
+.confirm-list li strong{font-family:var(--mono);color:var(--accent);}
+.warning-box{background:var(--red-dim);border:1px solid var(--red);border-radius:10px;padding:13px;font-size:12px;color:var(--red);margin:14px 0;line-height:1.6;}
+.warning-box strong{display:block;margin-bottom:4px;}
+.fy-bar{display:flex;flex-direction:column;gap:8px;}
+.fy-bar-row{display:flex;align-items:center;gap:10px;font-size:12px;}
+.fy-bar-label{width:76px;color:var(--text2);text-align:right;flex-shrink:0;}
+.fy-bar-track{flex:1;background:var(--surface3);border-radius:20px;height:18px;overflow:hidden;}
+.fy-bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s ease;display:flex;align-items:center;padding-left:8px;}
+.fy-bar-fill span{font-size:10px;color:#fff;font-family:var(--mono);white-space:nowrap;}
+.fy-bar-amount{width:65px;font-family:var(--mono);color:var(--text);font-size:12px;}
+.email-preview-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;max-height:360px;overflow-y:auto;font-size:13px;line-height:1.7;}
+.ep-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px;}
+.ep-table th{padding:7px 10px;border:1px solid var(--border2);background:var(--surface3);text-align:left;font-size:11px;letter-spacing:.3px;}
+.ep-table td{padding:7px 10px;border:1px solid var(--border);}
+.ep-table .total-row td{font-weight:700;background:var(--surface3);}
+.ep-breakdown-header td{background:rgba(79,142,247,0.08);font-weight:600;font-size:12px;}
+.toast{position:fixed;bottom:24px;right:24px;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 18px;font-size:13px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;transform:translateY(80px);opacity:0;transition:.3s;max-width:300px;}
+.toast.show{transform:translateY(0);opacity:1;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--surface2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.mt-4{margin-top:16px;}
+.flex-end{display:flex;justify-content:flex-end;gap:10px;}
+.sp-note{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 15px;font-size:12px;color:var(--text2);margin-top:14px;line-height:1.7;}
+.sp-note strong{color:var(--accent);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">SP</div>
+    <div>
+      <div class="topbar-title">Student Helper Timesheet</div>
+      <div class="topbar-sub">Singapore Polytechnic · SPO24 &nbsp;·&nbsp; <span class="ver-badge" onclick="openModal('modal-changelog')">v1.4</span></div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn-icon" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    <button class="btn-icon" id="logoutBtn" onclick="logout()" style="display:none" title="Log out">🚪</button>
+  </div>
+</div>
+
+<!-- ═══════════════ LANDING ═══════════════ -->
+<div class="view active" id="view-landing">
+  <div class="landing">
+    <div class="landing-badge">📋 Student Helper System</div>
+    <h1>Timesheet <span>Portal</span></h1>
+    <p>Log hours, track payments, and manage student helper timesheets — all in one place.</p>
+    <div class="landing-cards">
+      <div class="role-card" onclick="showStudentLogin()">
+        <div class="role-icon">🎓</div>
+        <h3>Student</h3>
+        <p>Log your working hours, submit timesheets for approval, and track payment status.</p>
+      </div>
+      <div class="role-card" onclick="showStaffLogin()">
+        <div class="role-icon">🏢</div>
+        <h3>Staff</h3>
+        <p>Review submissions, approve timesheets, manage rates, and generate finance emails.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ STUDENT VIEW ═══════════════ -->
+<div class="view" id="view-student">
+  <div class="student-container">
+    <div class="page-header">
+      <h2>My Timesheet</h2>
+      <p id="studentGreeting">Welcome back</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Student Information</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name</label><input class="form-input" id="s_name" placeholder="e.g. John Smith"></div>
+        <div class="form-group"><label>Admin Number</label><input class="form-input" id="s_admin" placeholder="e.g. P12345678"></div>
+        <div class="form-group"><label>Year / Course</label><input class="form-input" id="s_course" placeholder="e.g. 2/IT"></div>
+        <div class="form-group"><label>Name of Bank</label><input class="form-input" id="s_bank" placeholder="e.g. DBS PayNow (NRIC/FIN)"></div>
+        <div class="form-group"><label>Bank Account / NRIC</label><input class="form-input" id="s_account" placeholder="e.g. T12345678A"></div>
+        <div class="form-group"><label>Location</label>
+          <select class="form-input" id="s_location">
+            <option value="T11C01">T11C01</option>
+            <option value="T1442">T1442</option>
+            <option value="Makerspace">Makerspace</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Select Month</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <select class="form-input" id="s_month" style="width:155px" onchange="buildTimesheetTable()">
+          <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+          <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+          <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+          <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+        </select>
+        <select class="form-input" id="s_year" style="width:105px" onchange="buildTimesheetTable()">
+          <option value="2024">2024</option><option value="2025">2025</option>
+          <option value="2026" selected>2026</option><option value="2027">2027</option>
+        </select>
+        <div id="sub_status_display" style="margin-left:auto"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Attendance Log</div>
+      <div style="overflow-x:auto">
+        <table class="ts-table">
+          <thead>
+            <tr>
+              <th style="width:24px">#</th>
+              <th style="width:38px">
+                <label class="select-all-th" title="Select / deselect all days">
+                  <input type="checkbox" id="selectAllDays" onchange="toggleSelectAll(this.checked)">
+                  <span>All</span>
+                </label>
+              </th>
+              <th>Date</th><th>Day</th><th>Start Time</th><th>End Time</th><th>Hours</th>
+              <th style="min-width:160px">Remark</th>
+            </tr>
+          </thead>
+          <tbody id="tsBody"></tbody>
+        </table>
+      </div>
+      <div class="ts-totals" id="tsTotals"></div>
+      <div class="flex-end mt-4">
+        <button class="btn-submit" onclick="openSubmitConfirm()">Submit Timesheet →</button>
+      </div>
+    </div>
+    <div class="sp-note">
+      <strong>SharePoint / MS Teams Integration</strong><br>
+      Submitted timesheets sync to the <strong>FablabTimesheets</strong> SharePoint list.
+      Deploy as a Teams Tab — authentication is automatic via your SP session (same pattern as FacilityOS, no Azure registration needed).
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ STAFF VIEW ═══════════════ -->
+<div class="view" id="view-staff">
+  <div class="staff-container">
+    <div class="page-header"><h2>Staff Dashboard</h2><p>Manage student helper timesheets, payments and approvals</p></div>
+    <div class="dash-stats" id="dashStats"></div>
+    <div class="staff-tabs">
+      <button class="staff-tab active" onclick="switchTab('submissions',this)">📋 Submissions</button>
+      <button class="staff-tab" onclick="switchTab('fy',this)">📊 FY Overview</button>
+      <button class="staff-tab" onclick="switchTab('settings',this)">⚙️ Settings</button>
+    </div>
+    <div class="staff-tab-panel active" id="tab-submissions">
+      <div class="bulk-bar" id="bulkBar" style="display:none">
+        <div class="bulk-label"><strong id="bulkCount">0</strong> selected</div>
+        <button class="btn-sm btn-email" onclick="openBulkEmailRO()">📧 Bulk RO Email</button>
+        <button class="btn-sm btn-email-fin" onclick="openBulkEmailFin()">💼 Bulk Finance Email</button>
+        <button class="btn-sm btn-secondary" onclick="clearSelection()">✕ Clear</button>
+      </div>
+      <div class="submission-list" id="submissionList"></div>
+    </div>
+    <div class="staff-tab-panel" id="tab-fy">
+      <div class="card">
+        <div class="card-title">FY Monthly Payout</div>
+        <div class="fy-bar" id="fyBar"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Students by Total Payout</div>
+        <table class="ts-table">
+          <thead><tr><th>#</th><th>Name</th><th>Admin No.</th><th>Total Hours</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id="fyStudentTable"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="staff-tab-panel" id="tab-settings">
+      <div class="card">
+        <div class="card-title">Hourly Rate</div>
+        <div class="rate-row">
+          <div class="rate-input-wrap"><div class="rate-prefix">$</div><input class="rate-input" type="number" id="hourlyRate" value="11" min="1" step="0.5"></div>
+          <span style="font-size:13px;color:var(--text2)">per hour &nbsp;(default: $11/hr)</span>
+          <button class="btn-secondary" onclick="saveRate()">Save Rate</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Staff Signature (for PDF approval)</div>
+        <div class="sig-zone" onclick="document.getElementById('sigFileInput').click()" id="sigZone">
+          <div style="font-size:30px;margin-bottom:8px">✍️</div>
+          <div id="sigZoneText" style="font-size:13px;color:var(--text2)">Click to upload signature image (PNG/JPG)</div>
+          <img id="sigPreview" class="sig-preview" style="display:none">
+        </div>
+        <input type="file" id="sigFileInput" accept="image/*" style="display:none" onchange="loadSignature(event)">
+      </div>
+      <div class="card">
+        <div class="card-title">SharePoint / MS Lists Integration</div>
+        <div class="form-grid">
+          <div class="form-group"><label>SharePoint Site URL</label><input class="form-input" id="spSiteUrl" placeholder="https://sp.example.com/sites/SPO24"></div>
+          <div class="form-group"><label>List Name</label><input class="form-input" id="spListName" value="FablabTimesheets"></div>
+        </div>
+        <button class="btn-secondary" onclick="testSpConnection()">Test Connection</button>
+        <div class="sp-note" style="margin-top:10px"><strong>REST API</strong>: <code>/_api/web/lists/getbytitle('FablabTimesheets')/items</code> — request digest auth, Teams Tab auto-auth, no Azure registration needed.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+<div class="modal-backdrop" id="modal-student-login">
+  <div class="modal">
+    <h2>🎓 Student Sign In</h2>
+    <div class="modal-sub">Enter your details to access your timesheet</div>
+    <div class="form-group"><label>Admin Number</label><input class="form-input" id="sl_admin" placeholder="e.g. P12345678" onkeydown="if(event.key==='Enter')studentLogin()"></div>
+    <div class="form-group"><label>Full Name</label><input class="form-input" id="sl_name" placeholder="e.g. John Smith" onkeydown="if(event.key==='Enter')studentLogin()"></div>
+    <div class="error-msg" id="sl_error">Please enter your Admin Number and Name.</div>
+    <button class="btn-primary" onclick="studentLogin()">Continue</button>
+    <div class="divider"></div>
+    <button class="btn-secondary" style="width:100%" onclick="closeModal('modal-student-login')">← Back</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-staff-login">
+  <div class="modal">
+    <h2>🏢 Staff Access</h2>
+    <div class="modal-sub">Enter the admin secret code to access the dashboard</div>
+    <div class="form-group"><label>Secret Code</label><input class="form-input" id="staff_code" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')staffLogin()"></div>
+    <div class="error-msg" id="staff_error">Incorrect code. Please try again.</div>
+    <button class="btn-primary" onclick="staffLogin()">Access Dashboard</button>
+    <div class="divider"></div>
+    <button class="btn-secondary" style="width:100%" onclick="closeModal('modal-staff-login')">← Back</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-submit-confirm">
+  <div class="modal" style="max-width:500px">
+    <h2>📤 Submit Timesheet</h2>
+    <div class="modal-sub" id="submitConfirmSub">Please review before submitting</div>
+    <ul class="confirm-list" id="confirmList"></ul>
+    <div class="warning-box"><strong>⚠️ SP Policy Notice</strong>By submitting, you confirm that all information is accurate and truthful. Any misuse, falsification of timing or fraudulent entries is a violation of Singapore Polytechnic's Student Code of Conduct and may result in disciplinary action.</div>
+    <div class="flex-end"><button class="btn-secondary" onclick="closeModal('modal-submit-confirm')">Cancel</button><button class="btn-submit" onclick="confirmSubmit()">Confirm & Submit</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-amend">
+  <div class="modal modal-wide">
+    <h2>✏️ Amend Timesheet</h2>
+    <div class="modal-sub" id="amendSubTitle">Editing submission</div>
+    <div style="overflow-x:auto;max-height:55vh;overflow-y:auto">
+      <table class="ts-table">
+        <thead><tr><th>Date</th><th>Day</th><th>Start</th><th>End</th><th>Hours</th><th>Remark</th></tr></thead>
+        <tbody id="amendBody"></tbody>
+      </table>
+    </div>
+    <div class="flex-end mt-4"><button class="btn-secondary" onclick="closeModal('modal-amend')">Cancel</button><button class="btn-submit" onclick="saveAmend()">Save Changes</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-detail">
+  <div class="modal modal-detail">
+    <h2>📋 Timesheet Detail</h2>
+    <div class="modal-sub" id="detailSubTitle"></div>
+    <div class="detail-hg" id="detailHeader"></div>
+    <div style="overflow-x:auto;max-height:42vh;overflow-y:auto">
+      <table class="ts-table">
+        <thead><tr><th>#</th><th>Date</th><th>Day</th><th>Start</th><th>End</th><th>Net Hours</th><th>Remark</th></tr></thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+    </div>
+    <div class="ts-totals" id="detailTotals" style="margin-top:14px"></div>
+    <div id="detailVerifyStamp" style="display:none;margin-top:14px"></div>
+    <div class="flex-end mt-4">
+      <button class="btn-secondary" onclick="closeModal('modal-detail')">Close</button>
+      <button class="btn-sm" id="detailApproveBtn" style="padding:9px 16px;font-size:12px;display:none"></button>
+      <button class="btn-sm btn-pdf" style="padding:9px 16px;font-size:12px" onclick="exportPDFCurrent()">📄 Export PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-email-ro">
+  <div class="modal modal-wide">
+    <h2>📧 Email to Reporting Officer</h2>
+    <div class="modal-sub">Review then open in your mail client</div>
+    <div class="form-group"><label>To (RO Email)</label><input class="form-input" id="ro_email" placeholder="ro@singaporepoly.edu.sg"></div>
+    <div class="form-group"><label>Subject</label><input class="form-input" id="ro_subject" readonly></div>
+    <div class="form-group"><label>Preview</label><div class="email-preview-wrap" id="ro_preview"></div></div>
+    <div class="flex-end">
+      <button class="btn-secondary" onclick="closeModal('modal-email-ro')">Cancel</button>
+      <button class="btn-sm btn-email" style="padding:9px 18px;font-size:13px" onclick="sendEmailRO()">📤 Open in Mail Client</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-email-fin">
+  <div class="modal modal-wide">
+    <h2>💼 Email to Finance</h2>
+    <div class="modal-sub">Payment request email for Finance department</div>
+    <div class="form-group"><label>Finance Staff Email</label><input class="form-input" id="fin_email" placeholder="finance@singaporepoly.edu.sg"></div>
+    <div class="form-group"><label>Subject</label><input class="form-input" id="fin_subject" readonly></div>
+    <div class="form-group"><label>Preview</label><div class="email-preview-wrap" id="fin_preview"></div></div>
+    <div class="flex-end">
+      <button class="btn-secondary" onclick="closeModal('modal-email-fin')">Cancel</button>
+      <button class="btn-sm btn-email-fin" style="padding:9px 18px;font-size:13px" onclick="sendEmailFin()">📤 Open in Mail Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Changelog Modal -->
+<div class="modal-backdrop" id="modal-changelog">
+  <div class="modal" style="max-width:520px">
+    <h2>📋 Changelog</h2>
+    <div class="modal-sub">SP Student Helper Timesheet System</div>
+    <div class="changelog">
+
+      <div class="cl-version current">
+        <div class="cl-ver-header">
+          <span class="cl-tag">v1.4</span>
+          <span class="cl-date">Mar 2026</span>
+          <span class="cl-label latest">Latest</span>
+        </div>
+        <ul class="cl-items">
+          <li>Approval now auto-stamps with staff signature and date/time</li>
+          <li>RO &amp; Finance email buttons no longer disabled after approval</li>
+          <li>Approve / Revoke button added directly inside the View modal</li>
+          <li>PDF rewritten using Blob URL — fixes render issues in Teams/browsers</li>
+          <li>PDF shows green verified stamp with signature when approved; pending notice when not</li>
+          <li>Version badge added to topbar with this changelog</li>
+        </ul>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-ver-header">
+          <span class="cl-tag">v1.3</span>
+          <span class="cl-date">Mar 2026</span>
+        </div>
+        <ul class="cl-items">
+          <li>SG public holidays hardcoded from MOM official gazette (2024–2027)</li>
+          <li>Public holiday rows highlighted in amber with 🇸🇬 holiday name badge</li>
+          <li>Select All now skips weekends and public holidays</li>
+          <li>In-lieu (off-in-lieu) entries removed — not observed by SPO24</li>
+          <li>When a PH falls on Sunday, the following Monday is blocked automatically</li>
+        </ul>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-ver-header">
+          <span class="cl-tag">v1.2</span>
+          <span class="cl-date">Mar 2026</span>
+        </div>
+        <ul class="cl-items">
+          <li>Generic placeholder names: John Smith, P12345678, T12345678A</li>
+          <li>Select All checkbox in table header (weekdays only)</li>
+          <li>Multi-select checkboxes on submissions with bulk RO &amp; Finance email</li>
+          <li>Read-only View modal for staff to inspect full timesheet details</li>
+          <li>Approved submissions grey out Amend only; emails remain active</li>
+          <li>Email previews rendered as HTML tables (RO + Finance formats)</li>
+          <li>Finance email includes Workday Chargeable table and hours breakdown</li>
+        </ul>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-ver-header">
+          <span class="cl-tag">v1.1</span>
+          <span class="cl-date">Mar 2026</span>
+        </div>
+        <ul class="cl-items">
+          <li>Staff dashboard: FY payout chart, student payout table, stats cards</li>
+          <li>Approve / Revoke / Amend / PDF / Email actions per submission</li>
+          <li>Signature upload for PDF auto-sign</li>
+          <li>Hourly rate configurable (default $11/hr)</li>
+          <li>SharePoint / MS Lists integration settings panel</li>
+          <li>Bulk RO &amp; Finance email generation</li>
+          <li>Dark / light mode toggle</li>
+        </ul>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-ver-header">
+          <span class="cl-tag">v1.0</span>
+          <span class="cl-date">Mar 2026</span>
+        </div>
+        <ul class="cl-items">
+          <li>Initial release — student &amp; staff portal</li>
+          <li>Monthly timesheet with date auto-population from month selector</li>
+          <li>Per-row time slots (09:00–17:00), auto lunch deduction for shifts ≥5h</li>
+          <li>Submit confirmation modal with SP Policy warning</li>
+          <li>Staff login via secret code</li>
+          <li>Weekend rows greyed out and non-selectable</li>
+        </ul>
+      </div>
+
+    </div>
+    <div class="flex-end mt-4">
+      <button class="btn-secondary" onclick="closeModal('modal-changelog')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastMsg"></span></div>
+
+<script>
+const STAFF_CODE='SPO24STAFF';
+let currentUser=null,hourlyRate=11,staffSig=null,isLight=false,amendingId=null,detailId=null;
+let submissions=JSON.parse(localStorage.getItem('ts_v2')||'[]');
+function saveDB(){try{localStorage.setItem('ts_v2',JSON.stringify(submissions));}catch(e){}}
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TIMES=[];
+for(let h=6;h<=22;h++){TIMES.push(pad(h)+':00');if(h<22)TIMES.push(pad(h)+':30');}
+function pad(n){return String(n).padStart(2,'0');}
+function ord(n){if(n===1||n===21||n===31)return'st';if(n===2||n===22)return'nd';if(n===3||n===23)return'rd';return'th';}
+
+function toggleTheme(){isLight=!isLight;document.body.classList.toggle('light',isLight);document.getElementById('themeBtn').textContent=isLight?'☀️':'🌙';}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');document.getElementById('logoutBtn').style.display=id==='landing'?'none':'flex';}
+function logout(){currentUser=null;showView('landing');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showStudentLogin(){document.getElementById('sl_error').classList.remove('show');openModal('modal-student-login');}
+function showStaffLogin(){document.getElementById('staff_error').classList.remove('show');openModal('modal-staff-login');}
+
+function studentLogin(){
+  const a=document.getElementById('sl_admin').value.trim(),n=document.getElementById('sl_name').value.trim();
+  if(!a||!n){document.getElementById('sl_error').classList.add('show');return;}
+  currentUser={type:'student',name:n,admin:a};
+  closeModal('modal-student-login');
+  document.getElementById('studentGreeting').textContent=`Welcome, ${n} (${a})`;
+  document.getElementById('s_name').value=n;
+  document.getElementById('s_admin').value=a;
+  setDefaultMonth();buildTimesheetTable();showView('student');
+}
+
+function staffLogin(){
+  if(document.getElementById('staff_code').value.trim()!==STAFF_CODE){
+    document.getElementById('staff_error').classList.add('show');
+    document.getElementById('staff_code').value='';return;
+  }
+  currentUser={type:'staff'};closeModal('modal-staff-login');renderStaffDash();showView('staff');
+}
+
+// ─── SG PUBLIC HOLIDAYS (MOM official gazetted dates only) ───
+// No in-lieu entries. If a PH falls on Sunday, the following Monday
+// is blocked via isSundayPhMonday() logic — not stored here.
+const SG_PH = {
+  // 2024
+  '2024-01-01':'New Year\'s Day',
+  '2024-02-10':'Chinese New Year',
+  '2024-02-11':'Chinese New Year',
+  '2024-03-29':'Good Friday',
+  '2024-04-10':'Hari Raya Puasa',
+  '2024-05-01':'Labour Day',
+  '2024-05-22':'Vesak Day',
+  '2024-06-17':'Hari Raya Haji',
+  '2024-08-09':'National Day',
+  '2024-10-31':'Deepavali',
+  '2024-12-25':'Christmas Day',
+  // 2025
+  '2025-01-01':'New Year\'s Day',
+  '2025-01-29':'Chinese New Year',
+  '2025-01-30':'Chinese New Year',
+  '2025-03-31':'Hari Raya Puasa',
+  '2025-04-18':'Good Friday',
+  '2025-05-01':'Labour Day',
+  '2025-05-03':'Polling Day',
+  '2025-05-12':'Vesak Day',
+  '2025-06-07':'Hari Raya Haji',   // Saturday
+  '2025-08-09':'National Day',     // Saturday
+  '2025-10-20':'Deepavali',
+  '2025-12-25':'Christmas Day',
+  // 2026
+  '2026-01-01':'New Year\'s Day',
+  '2026-02-17':'Chinese New Year',
+  '2026-02-18':'Chinese New Year',
+  '2026-03-21':'Hari Raya Puasa',  // Saturday
+  '2026-04-03':'Good Friday',
+  '2026-05-01':'Labour Day',
+  '2026-05-27':'Hari Raya Haji',
+  '2026-05-31':'Vesak Day',        // Sunday → Mon 1 Jun blocked
+  '2026-08-09':'National Day',     // Sunday → Mon 10 Aug blocked
+  '2026-11-08':'Deepavali',        // Sunday → Mon 9 Nov blocked
+  '2026-12-25':'Christmas Day',
+  // 2027 (projected)
+  '2027-01-01':'New Year\'s Day',
+  '2027-02-07':'Chinese New Year',
+  '2027-02-08':'Chinese New Year',
+  '2027-03-26':'Good Friday',
+  '2027-05-01':'Labour Day',
+  '2027-08-09':'National Day',
+  '2027-12-25':'Christmas Day',
+};
+
+function phKey(yr,mo,d){return`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function getPhName(yr,mo,d){return SG_PH[phKey(yr,mo,d)]||null;}
+
+// If today is Monday and yesterday (Sunday) was a gazetted PH → block Monday
+function isSundayPhMonday(yr,mo,d){
+  const dt=new Date(yr,mo,d);
+  if(dt.getDay()!==1)return null;
+  const sun=new Date(yr,mo,d-1);
+  const name=getPhName(sun.getFullYear(),sun.getMonth(),sun.getDate());
+  return name?`${name} (PH fell on Sunday)`:null;
+}
+
+function isBlockedDay(yr,mo,d){
+  const dt=new Date(yr,mo,d);
+  if(dt.getDay()===0||dt.getDay()===6)return true;
+  if(getPhName(yr,mo,d))return true;
+  if(isSundayPhMonday(yr,mo,d))return true;
+  return false;
+}
+
+function getBlockLabel(yr,mo,d){
+  const ph=getPhName(yr,mo,d);if(ph)return ph;
+  return isSundayPhMonday(yr,mo,d);
+}
+
+// ─── TIMESHEET ───
+function setDefaultMonth(){const now=new Date();document.getElementById('s_month').value=now.getMonth();document.getElementById('s_year').value=now.getFullYear();}
+
+function buildTimesheetTable(){
+  const mo=+document.getElementById('s_month').value,yr=+document.getElementById('s_year').value;
+  const dim=new Date(yr,mo+1,0).getDate();
+  const tb=document.getElementById('tsBody');tb.innerHTML='';
+  document.getElementById('selectAllDays').checked=false;
+  for(let d=1;d<=dim;d++){
+    const dt=new Date(yr,mo,d),dn=DAYS[dt.getDay()];
+    const wk=dt.getDay()===0||dt.getDay()===6;
+    const blocked=isBlockedDay(yr,mo,d);
+    const blockLabel=getBlockLabel(yr,mo,d);
+    const tr=document.createElement('tr');
+    if(wk)tr.classList.add('weekend');
+    if(!wk&&blocked)tr.classList.add('public-holiday');
+    tr.id=`row_${d}`;
+    const dateCellExtra=blockLabel&&!wk
+      ?`<span class="ph-badge" title="${blockLabel}">🇸🇬 ${blockLabel}</span>`:'';
+    tr.innerHTML=`
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${d}</td>
+      <td>${blocked?`<span style="font-size:14px;opacity:.3" title="${blockLabel||'Weekend'}">⛔</span>`:`<input type="checkbox" class="ts-row-check" id="chk_${d}" onchange="toggleRow(${d})">`}</td>
+      <td style="font-weight:500;white-space:nowrap">${d}${ord(d)}</td>
+      <td style="white-space:nowrap">
+        <span style="color:${blocked?'var(--text3)':'var(--text2)'}">${dn}</span>
+        ${dateCellExtra}
+      </td>
+      <td><select class="time-select" id="st_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='09:00'?' selected':''}>${t}</option>`).join('')}</select></td>
+      <td><select class="time-select" id="et_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='17:00'?' selected':''}>${t}</option>`).join('')}</select></td>
+      <td><span class="hours-badge none" id="hb_${d}">—</span></td>
+      <td><textarea class="remark-input" id="rm_${d}" disabled rows="1" placeholder="Optional remark"></textarea></td>`;
+    tb.appendChild(tr);
+  }
+  updTotals();checkExistingSub(mo,yr);
+}
+
+function toggleSelectAll(on){
+  const mo=+document.getElementById('s_month').value,yr=+document.getElementById('s_year').value;
+  const dim=new Date(yr,mo+1,0).getDate();
+  // Only toggle non-blocked weekdays
+  for(let d=1;d<=dim;d++){
+    if(isBlockedDay(yr,mo,d))continue;
+    const c=document.getElementById(`chk_${d}`);
+    if(c&&c.checked!==on){c.checked=on;toggleRow(d);}
+  }
+}
+
+function toggleRow(d){
+  const on=document.getElementById(`chk_${d}`).checked;
+  ['st_','et_'].forEach(p=>document.getElementById(p+d).disabled=!on);
+  document.getElementById(`rm_${d}`).disabled=!on;
+  if(on){calcH(d);document.getElementById(`row_${d}`).classList.add('filled');}
+  else{const b=document.getElementById(`hb_${d}`);b.textContent='—';b.className='hours-badge none';document.getElementById(`row_${d}`).classList.remove('filled');updTotals();}
+}
+
+function calcH(d){
+  const s=document.getElementById(`st_${d}`).value,e=document.getElementById(`et_${d}`).value;
+  const [sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
+  let diff=(eh*60+em)-(sh*60+sm);
+  const b=document.getElementById(`hb_${d}`);
+  if(diff<=0){b.textContent='!';b.className='hours-badge none';return;}
+  if(diff>=300)diff-=60;
+  b.textContent=(diff/60).toFixed(1)+'h';b.className='hours-badge has';updTotals();
+}
+
+function getRow(d){
+  const c=document.getElementById(`chk_${d}`);if(!c||!c.checked)return null;
+  const s=document.getElementById(`st_${d}`).value,e=document.getElementById(`et_${d}`).value;
+  const [sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
+  let diff=(eh*60+em)-(sh*60+sm);if(diff<=0)return null;if(diff>=300)diff-=60;
+  return{day:d,start:s,end:e,hours:diff/60,remark:document.getElementById(`rm_${d}`).value||''};
+}
+
+function getDIM(){return new Date(+document.getElementById('s_year').value,+document.getElementById('s_month').value+1,0).getDate();}
+
+function updTotals(){
+  let hrs=0,days=0;
+  for(let d=1;d<=getDIM();d++){const r=getRow(d);if(r){hrs+=r.hours;days++;}}
+  const rt=parseFloat(document.getElementById('hourlyRate')?.value||11)||11;
+  document.getElementById('tsTotals').innerHTML=`
+    <div class="ts-total-item"><div class="ts-total-label">Working Days</div><div class="ts-total-value">${days}</div><div class="ts-total-sub">days logged</div></div>
+    <div class="ts-total-item"><div class="ts-total-label">Total Hours</div><div class="ts-total-value">${hrs.toFixed(1)}</div><div class="ts-total-sub">after lunch deduction</div></div>
+    <div class="ts-total-item"><div class="ts-total-label">Est. Payment</div><div class="ts-total-value">$${(hrs*rt).toFixed(2)}</div><div class="ts-total-sub">@ $${rt}/hr</div></div>`;
+}
+
+// ─── SUBMIT ───
+function openSubmitConfirm(){
+  const mo=+document.getElementById('s_month').value,yr=+document.getElementById('s_year').value;
+  const rows=[];for(let d=1;d<=getDIM();d++){const r=getRow(d);if(r)rows.push(r);}
+  if(!rows.length){showToast('⚠️','No days selected. Tick at least one day.');return;}
+  const hrs=rows.reduce((a,b)=>a+b.hours,0),rt=parseFloat(document.getElementById('hourlyRate')?.value||11)||11;
+  document.getElementById('submitConfirmSub').textContent=`${MONTHS[mo]} ${yr} — ${document.getElementById('s_name').value||'Student'}`;
+  document.getElementById('confirmList').innerHTML=`
+    <li><span>Student</span><strong>${document.getElementById('s_name').value||'—'} (${document.getElementById('s_admin').value||'—'})</strong></li>
+    <li><span>Period</span><strong>${MONTHS[mo]} ${yr}</strong></li>
+    <li><span>Working Days</span><strong>${rows.length}</strong></li>
+    <li><span>Total Hours</span><strong>${hrs.toFixed(1)} hrs</strong></li>
+    <li><span>Estimated Pay</span><strong>$${(hrs*rt).toFixed(2)}</strong></li>`;
+  openModal('modal-submit-confirm');
+}
+
+function confirmSubmit(){
+  const mo=+document.getElementById('s_month').value,yr=+document.getElementById('s_year').value;
+  const rows=[];for(let d=1;d<=getDIM();d++){const r=getRow(d);if(r)rows.push(r);}
+  const hrs=rows.reduce((a,b)=>a+b.hours,0),rt=parseFloat(document.getElementById('hourlyRate')?.value||11)||11;
+  const sub={id:Date.now(),name:document.getElementById('s_name').value||'Student',admin:document.getElementById('s_admin').value||'P00000000',course:document.getElementById('s_course').value||'',bank:document.getElementById('s_bank').value||'',account:document.getElementById('s_account').value||'',location:document.getElementById('s_location').value,month:mo,year:yr,rows,totalHrs:hrs,rate:rt,totalPay:hrs*rt,status:'pending',submittedAt:new Date().toISOString()};
+  submissions=submissions.filter(s=>!(s.admin===sub.admin&&s.month===mo&&s.year===yr));
+  submissions.push(sub);saveDB();closeModal('modal-submit-confirm');showToast('✅','Timesheet submitted!');checkExistingSub(mo,yr);
+}
+
+function checkExistingSub(mo,yr){
+  if(!currentUser)return;
+  const sub=submissions.find(s=>s.admin===currentUser.admin&&s.month===mo&&s.year===yr);
+  const el=document.getElementById('sub_status_display');if(!el)return;
+  el.innerHTML=sub?`<span class="status-badge status-${sub.status}">${cap(sub.status)}</span>`:`<span class="status-badge" style="background:var(--surface3);color:var(--text3)">Not Submitted</span>`;
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+// ─── STAFF DASH ───
+function renderStaffDash(){
+  const now=new Date(),fyS=now.getMonth()>=3?now.getFullYear():now.getFullYear()-1,fyE=fyS+1;
+  const fyM=[];for(let m=3;m<=11;m++)fyM.push({y:fyS,m});for(let m=0;m<=2;m++)fyM.push({y:fyE,m});
+  const fySubs=submissions.filter(s=>fyM.some(f=>f.y===s.year&&f.m===s.month));
+  const fyPaid=fySubs.filter(s=>s.status==='approved').reduce((a,b)=>a+b.totalPay,0);
+  const thisMo=submissions.filter(s=>s.month===now.getMonth()&&s.year===now.getFullYear());
+  const moPay=thisMo.filter(s=>s.status==='approved').reduce((a,b)=>a+b.totalPay,0);
+  const pending=submissions.filter(s=>s.status==='pending');
+  document.getElementById('dashStats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">FY${fyS}/${fyE} Total</div><div class="stat-value">$${fyPaid.toFixed(0)}</div><div class="stat-sub">Approved payments</div></div>
+    <div class="stat-card"><div class="stat-label">${MONTHS[now.getMonth()]} Payout</div><div class="stat-value">$${moPay.toFixed(0)}</div><div class="stat-sub">This month approved</div></div>
+    <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-value">${pending.length}</div><div class="stat-sub">Awaiting approval</div></div>
+    <div class="stat-card"><div class="stat-label">Unique Students</div><div class="stat-value">${[...new Set(submissions.map(s=>s.admin))].length}</div><div class="stat-sub">Total helpers</div></div>`;
+  renderSubList();renderFYBar(fyM);renderFYTable();
+}
+
+function getSelIds(){return[...document.querySelectorAll('.ssChk:checked')].map(c=>+c.dataset.id);}
+function updBulk(){
+  const ids=getSelIds();document.getElementById('bulkCount').textContent=ids.length;
+  document.getElementById('bulkBar').style.display=ids.length?'flex':'none';
+  document.querySelectorAll('.submission-item').forEach(el=>{if(el.dataset.id)el.classList.toggle('selected',ids.includes(+el.dataset.id));});
+}
+function clearSelection(){document.querySelectorAll('.ssChk').forEach(c=>c.checked=false);updBulk();}
+
+function renderSubList(){
+  const list=document.getElementById('submissionList');
+  if(!submissions.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--text2);padding:48px">No submissions yet</div>';return;}
+  list.innerHTML=[...submissions].reverse().map(sub=>{
+    const appr=sub.status==='approved';
+    return`<div class="submission-item" data-id="${sub.id}">
+      <input type="checkbox" class="sub-check ssChk" data-id="${sub.id}" onchange="updBulk()">
+      <div class="sub-info" onclick="openDetail(${sub.id})" title="Click to view full timesheet">
+        <div class="sub-name">${sub.name} <span style="color:var(--text3);font-weight:400;font-size:12px">(${sub.admin})</span></div>
+        <div class="sub-meta">${MONTHS[sub.month]} ${sub.year} · ${sub.totalHrs.toFixed(1)}h · $${sub.totalPay.toFixed(2)} · ${sub.location}</div>
+      </div>
+      <span class="status-badge status-${sub.status}">${cap(sub.status)}</span>
+      <div class="sub-actions">
+        <button class="btn-sm btn-view" onclick="openDetail(${sub.id})">👁 View</button>
+        ${!appr?`<button class="btn-sm btn-approve" onclick="approveSub(${sub.id})">✅ Approve</button>`:''}
+        ${appr?`<button class="btn-sm btn-reject" onclick="rejectSub(${sub.id})">↩ Revoke</button>`:''}
+        <button class="btn-sm btn-amend" ${appr?'disabled':''} onclick="openAmend(${sub.id})">✏️ Amend</button>
+        <button class="btn-sm btn-pdf" onclick="exportPDF(${sub.id})">📄 PDF</button>
+        <button class="btn-sm btn-email" onclick="openEmailRO(${sub.id})">📧 RO</button>
+        <button class="btn-sm btn-email-fin" onclick="openEmailFin(${sub.id})">💼 Fin</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function approveSub(id){
+  const s=submissions.find(x=>x.id===id);
+  if(s){
+    s.status='approved';
+    s.approvedAt=new Date().toISOString();
+    s.approvedBy='Staff'; // could be expanded to store staff name
+    saveDB();renderStaffDash();
+    // Refresh detail modal if it's open for this submission
+    if(detailId===id)openDetail(id);
+    showToast('✅','Approved & verified!');
+  }
+}
+function rejectSub(id){const s=submissions.find(s=>s.id===id);if(s){s.status='rejected';delete s.approvedAt;delete s.approvedBy;saveDB();renderStaffDash();if(detailId===id)openDetail(id);showToast('❌','Revoked.');}}
+
+// ─── DETAIL VIEW ───
+function openDetail(id){
+  detailId=id;const sub=submissions.find(s=>s.id===id);if(!sub)return;
+  const appr=sub.status==='approved';
+  document.getElementById('detailSubTitle').textContent=`${sub.name} — ${MONTHS[sub.month]} ${sub.year}`;
+  document.getElementById('detailHeader').innerHTML=`
+    <div class="detail-field"><label>Name</label><span>${sub.name}</span></div>
+    <div class="detail-field"><label>Admin No.</label><span>${sub.admin}</span></div>
+    <div class="detail-field"><label>Year / Course</label><span>${sub.course||'—'}</span></div>
+    <div class="detail-field"><label>Bank</label><span>${sub.bank||'—'}</span></div>
+    <div class="detail-field"><label>Account / NRIC</label><span>${sub.account||'—'}</span></div>
+    <div class="detail-field"><label>Location</label><span>${sub.location}</span></div>
+    <div class="detail-field"><label>Period</label><span>${MONTHS[sub.month]} ${sub.year}</span></div>
+    <div class="detail-field"><label>Rate</label><span>$${sub.rate}/hr</span></div>
+    <div class="detail-field"><label>Status</label><span class="status-badge status-${sub.status}">${cap(sub.status)}</span></div>`;
+  const tb=document.getElementById('detailBody');tb.innerHTML='';let seq=1;
+  sub.rows.forEach(r=>{
+    const dt=new Date(sub.year,sub.month,r.day),tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-family:var(--mono);color:var(--text3)">${seq++}</td><td style="white-space:nowrap">${r.day}${ord(r.day)}</td><td style="color:var(--text2)">${DAYS[dt.getDay()]}</td><td style="font-family:var(--mono)">${r.start}</td><td style="font-family:var(--mono)">${r.end}</td><td><span class="hours-badge has">${r.hours.toFixed(1)}h</span></td><td style="font-size:12px;color:var(--text2)">${r.remark||'—'}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('detailTotals').innerHTML=`
+    <div class="ts-total-item"><div class="ts-total-label">Total Hours</div><div class="ts-total-value">${sub.totalHrs.toFixed(1)}</div><div class="ts-total-sub">net hours</div></div>
+    <div class="ts-total-item"><div class="ts-total-label">Rate</div><div class="ts-total-value">$${sub.rate}</div><div class="ts-total-sub">per hour</div></div>
+    <div class="ts-total-item"><div class="ts-total-label">Total Pay</div><div class="ts-total-value">$${sub.totalPay.toFixed(2)}</div><div class="ts-total-sub">payable</div></div>`;
+  // Verification stamp
+  const stampEl=document.getElementById('detailVerifyStamp');
+  if(appr&&sub.approvedAt){
+    const d=new Date(sub.approvedAt);
+    stampEl.innerHTML=`
+      <div class="verify-stamp">
+        ${staffSig?`<img src="${staffSig}" class="stamp-sig">`:'<div class="stamp-sig-placeholder">✍️ Signed</div>'}
+        <div class="stamp-text">
+          <div class="stamp-verified">✅ Verified by Staff</div>
+          <div class="stamp-date">Approved on ${d.toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'})} at ${d.toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`;
+    stampEl.style.display='block';
+  } else {
+    stampEl.innerHTML='';stampEl.style.display='none';
+  }
+  // Approve button in footer
+  const approveBtn=document.getElementById('detailApproveBtn');
+  if(!appr){
+    approveBtn.style.display='inline-flex';
+    approveBtn.textContent='✅ Approve';
+    approveBtn.className='btn-sm btn-approve';
+    approveBtn.onclick=()=>{approveSub(id);};
+  } else {
+    approveBtn.style.display='inline-flex';
+    approveBtn.textContent='↩ Revoke';
+    approveBtn.className='btn-sm btn-reject';
+    approveBtn.onclick=()=>{rejectSub(id);};
+  }
+  openModal('modal-detail');
+}
+function exportPDFCurrent(){if(detailId)exportPDF(detailId);}
+
+// ─── AMEND ───
+function openAmend(id){
+  amendingId=id;const sub=submissions.find(s=>s.id===id);if(!sub)return;
+  document.getElementById('amendSubTitle').textContent=`${sub.name} — ${MONTHS[sub.month]} ${sub.year}`;
+  const dim=new Date(sub.year,sub.month+1,0).getDate(),tb=document.getElementById('amendBody');tb.innerHTML='';
+  for(let d=1;d<=dim;d++){
+    const r=sub.rows.find(x=>x.day===d),dt=new Date(sub.year,sub.month,d),wk=dt.getDay()===0||dt.getDay()===6;
+    const tr=document.createElement('tr');if(wk)tr.classList.add('weekend');
+    tr.innerHTML=`<td style="white-space:nowrap">${d}${ord(d)}</td><td>${DAYS[dt.getDay()]}</td>
+      <td><select class="time-select" id="as_${d}" style="width:80px">${TIMES.map(t=>`<option${r&&r.start===t?' selected':''}>${t}</option>`).join('')}</select></td>
+      <td><select class="time-select" id="ae_${d}" style="width:80px">${TIMES.map(t=>`<option${r&&r.end===t?' selected':''}>${t}</option>`).join('')}</select></td>
+      <td style="font-family:var(--mono);font-size:12px">${r?r.hours.toFixed(1)+'h':'—'}</td>
+      <td><input class="form-input" style="font-size:12px;padding:5px 8px" value="${r?r.remark:''}" id="ar_${d}"></td>`;
+    tb.appendChild(tr);
+  }
+  openModal('modal-amend');
+}
+
+function saveAmend(){
+  const sub=submissions.find(s=>s.id===amendingId);if(!sub)return;
+  const dim=new Date(sub.year,sub.month+1,0).getDate(),rows=[];
+  for(let d=1;d<=dim;d++){
+    const sel=document.getElementById(`as_${d}`);if(!sel)continue;
+    const s=sel.value,e=document.getElementById(`ae_${d}`).value;
+    const [sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
+    let diff=(eh*60+em)-(sh*60+sm);if(diff<=0)continue;if(diff>=300)diff-=60;
+    rows.push({day:d,start:s,end:e,hours:diff/60,remark:document.getElementById(`ar_${d}`).value});
+  }
+  sub.rows=rows;sub.totalHrs=rows.reduce((a,b)=>a+b.hours,0);sub.totalPay=sub.totalHrs*sub.rate;
+  saveDB();closeModal('modal-amend');renderStaffDash();showToast('✅','Amended!');
+}
+
+// ─── FY ───
+function renderFYBar(fyM){
+  const data=fyM.map(fm=>{const t=submissions.filter(s=>s.year===fm.y&&s.month===fm.m&&s.status==='approved').reduce((a,b)=>a+b.totalPay,0);return{l:MONTHS[fm.m].slice(0,3),t};});
+  const mx=Math.max(...data.map(d=>d.t),1);
+  document.getElementById('fyBar').innerHTML=data.map(m=>`
+    <div class="fy-bar-row">
+      <div class="fy-bar-label">${m.l}</div>
+      <div class="fy-bar-track"><div class="fy-bar-fill" style="width:${m.t>0?(m.t/mx*100).toFixed(1):0}%">${m.t>0?`<span>$${m.t.toFixed(0)}</span>`:''}</div></div>
+      <div class="fy-bar-amount">$${m.t.toFixed(0)}</div>
+    </div>`).join('');
+}
+
+function renderFYTable(){
+  const mp={};
+  submissions.forEach(s=>{if(!mp[s.admin])mp[s.admin]={name:s.name,admin:s.admin,hrs:0,pay:0,status:s.status};mp[s.admin].hrs+=s.totalHrs;mp[s.admin].pay+=s.totalPay;});
+  document.getElementById('fyStudentTable').innerHTML=Object.values(mp).sort((a,b)=>b.pay-a.pay).map((r,i)=>`
+    <tr><td style="font-family:var(--mono);color:var(--text3)">${i+1}</td><td>${r.name}</td><td style="font-family:var(--mono)">${r.admin}</td><td style="font-family:var(--mono)">${r.hrs.toFixed(1)}h</td><td style="font-family:var(--mono);color:var(--accent)">$${r.pay.toFixed(2)}</td><td><span class="status-badge status-${r.status}">${cap(r.status)}</span></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px">No data</td></tr>';
+}
+
+// ─── PDF ───
+function exportPDF(id){
+  const sub=submissions.find(s=>s.id===id);if(!sub)return;
+  const dim=new Date(sub.year,sub.month+1,0).getDate();
+  const rows=[];
+  for(let d=1;d<=dim;d++){
+    const r=sub.rows.find(x=>x.day===d),dt=new Date(sub.year,sub.month,d),wk=dt.getDay()===0||dt.getDay()===6;
+    rows.push(`<tr style="color:${wk?'#aaa':'inherit'}"><td>${d}${ord(d)}</td><td>${DAYS[dt.getDay()]}</td><td>${r?r.start:'--'}</td><td>${r?r.end:'--'}</td><td>${r?r.hours.toFixed(1):'--'}</td><td>${r?r.remark||'':''}</td></tr>`);
+  }
+  // Verification stamp — only shown when approved
+  let sigSection='';
+  if(sub.status==='approved'){
+    const approvedDate=sub.approvedAt?new Date(sub.approvedAt).toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    const sigImg=staffSig?`<img src="${staffSig}" style="max-height:56px;max-width:180px;display:block;margin-bottom:6px">`:'<div style="font-size:22px;margin-bottom:6px">✍️</div>';
+    sigSection=`
+    <div style="margin-top:32px;border-top:1px solid #ccc;padding-top:20px;display:flex;align-items:flex-start;gap:32px">
+      <div style="flex:1">
+        <p style="font-size:11px;font-weight:bold;margin-bottom:8px">VERIFIED & APPROVED BY:</p>
+        ${sigImg}
+        <div style="border-bottom:1px solid #333;width:180px;margin-bottom:4px"></div>
+        <p style="font-size:10px;color:#555">Authorised Staff Signature</p>
+        <p style="font-size:10px;color:#555;margin-top:4px">Date: ${approvedDate}</p>
+      </div>
+      <div style="flex:1">
+        <p style="font-size:11px;font-weight:bold;margin-bottom:8px">STUDENT ACKNOWLEDGEMENT:</p>
+        <div style="border-bottom:1px solid #333;width:180px;margin-bottom:4px;margin-top:40px"></div>
+        <p style="font-size:10px;color:#555">Student Signature / Date</p>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:8px 12px;background:#f0f7f0;border:1px solid #4caf50;border-radius:4px;font-size:10px;color:#2e7d32">
+      ✅ This attendance sheet has been verified and approved by an authorised SP staff member on ${approvedDate}.
+    </div>`;
+  } else {
+    sigSection=`
+    <div style="margin-top:32px;border-top:1px solid #ccc;padding-top:20px;display:flex;align-items:flex-start;gap:32px">
+      <div style="flex:1">
+        <p style="font-size:11px;font-weight:bold;margin-bottom:8px">VERIFIED & APPROVED BY:</p>
+        <div style="border-bottom:1px solid #333;width:180px;margin-top:40px;margin-bottom:4px"></div>
+        <p style="font-size:10px;color:#555">Authorised Staff Signature / Date</p>
+      </div>
+      <div style="flex:1">
+        <p style="font-size:11px;font-weight:bold;margin-bottom:8px">STUDENT ACKNOWLEDGEMENT:</p>
+        <div style="border-bottom:1px solid #333;width:180px;margin-top:40px;margin-bottom:4px"></div>
+        <p style="font-size:10px;color:#555">Student Signature / Date</p>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:8px 12px;background:#fff8e1;border:1px solid #f9a825;border-radius:4px;font-size:10px;color:#e65100">
+      ⏳ Pending approval — not yet verified by staff.
+    </div>`;
+  }
+  const html=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Attendance Sheet — ${sub.name}</title>
+<style>
+  body{font-family:Arial,sans-serif;padding:30px;font-size:12px;color:#222;}
+  h2{font-size:15px;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;}
+  .sub{font-size:10px;color:#666;margin-bottom:12px;}
+  .hg{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin:14px 0;padding:12px;background:#f8f8f8;border:1px solid #ddd;border-radius:4px;}
+  .hg div{padding:2px 0;}
+  .hg label{font-weight:bold;font-size:10px;color:#666;display:block;text-transform:uppercase;letter-spacing:.3px;}
+  table{width:100%;border-collapse:collapse;margin-top:14px;}
+  th,td{border:1px solid #ccc;padding:6px 9px;text-align:left;}
+  th{background:#f0f0f0;font-size:10px;text-transform:uppercase;letter-spacing:.3px;}
+  .tot td{font-weight:bold;background:#f5f5f5;}
+  @media print{body{padding:15px;}@page{margin:15mm;}}
+</style></head><body>
+  <h2>Student Helper Attendance Sheet</h2>
+  <div class="sub">Singapore Polytechnic · SPO24 Dept Academic Quality &amp; Resources</div>
+  <div class="hg">
+    <div><label>Name</label>${sub.name}</div>
+    <div><label>Admin No.</label>${sub.admin}</div>
+    <div><label>Year / Course</label>${sub.course||'—'}</div>
+    <div><label>Month</label>${MONTHS[sub.month]} ${sub.year}</div>
+    <div><label>Bank</label>${sub.bank||'—'}</div>
+    <div><label>Account / NRIC</label>${sub.account||'—'}</div>
+    <div><label>Location</label>${sub.location}</div>
+    <div><label>Hourly Rate</label>$${sub.rate}/hr</div>
+  </div>
+  <table>
+    <thead><tr><th>Date</th><th>Day</th><th>Start</th><th>End</th><th>Net Hours</th><th>Remark</th></tr></thead>
+    <tbody>
+      ${rows.join('')}
+      <tr class="tot"><td colspan="4" style="text-align:right">Total</td><td>${sub.totalHrs.toFixed(1)}h</td><td>$${sub.totalPay.toFixed(2)} @ $${sub.rate}/hr</td></tr>
+    </tbody>
+  </table>
+  ${sigSection}
+  <p style="margin-top:16px;font-size:9px;color:#aaa">Auto-generated by SP Student Helper Timesheet System. Falsification of entries is against SP Student Code of Conduct. Printed: ${new Date().toLocaleString('en-SG')}</p>
+</body></html>`;
+  // Use Blob URL — avoids document.write issues in modern browsers/Teams
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const w=window.open(url,'_blank');
+  if(w){
+    w.addEventListener('load',()=>{
+      setTimeout(()=>{w.print();URL.revokeObjectURL(url);},400);
+    });
+  } else {
+    // Fallback: direct download
+    const a=document.createElement('a');
+    a.href=url;a.download=`Timesheet_${sub.name}_${MONTHS[sub.month]}${sub.year}.html`;
+    a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+  }
+}
+
+// ─── EMAIL BUILDERS (HTML table format) ───
+function buildROHTML(subs){
+  const rows=subs.map((s,i)=>`<tr><td style="padding:7px 11px;border:1px solid #ddd">${i+1}</td><td style="padding:7px 11px;border:1px solid #ddd">${s.name}</td><td style="padding:7px 11px;border:1px solid #ddd">${s.admin}</td><td style="padding:7px 11px;border:1px solid #ddd">${MONTHS[s.month]} ${s.year}</td><td style="padding:7px 11px;border:1px solid #ddd">${s.location}</td><td style="padding:7px 11px;border:1px solid #ddd;text-align:right">${s.totalHrs.toFixed(1)}h</td><td style="padding:7px 11px;border:1px solid #ddd;text-align:right">$${s.totalPay.toFixed(2)}</td></tr>`).join('');
+  const tot=subs.reduce((a,b)=>a+b.totalPay,0),totH=subs.reduce((a,b)=>a+b.totalHrs,0);
+  return `<p>Dear [Reporting Officer],</p><p>I would like to seek your approval for the student helper payment(s) listed below.</p>
+  <table class="ep-table"><thead><tr><th>#</th><th>Name</th><th>Admin No.</th><th>Period</th><th>Location</th><th>Hours</th><th>Amount</th></tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr class="total-row"><td colspan="5" style="padding:7px 11px;border:1px solid #ddd;text-align:right;font-weight:bold">Total</td><td style="padding:7px 11px;border:1px solid #ddd;font-weight:bold;text-align:right">${totH.toFixed(1)}h</td><td style="padding:7px 11px;border:1px solid #ddd;font-weight:bold;text-align:right">$${tot.toFixed(2)}</td></tr></tfoot></table>
+  <p>Please reply to indicate your approval.</p><p>Thank you.<br><br>Best regards,<br>[Your Name]<br>[Designation]<br>SPO24 Dept Academic Quality &amp; Resources</p>`;
+}
+
+function buildFinHTML(subs){
+  const locs=[...new Set(subs.map(s=>s.location))].join(', ');
+  const periods=[...new Set(subs.map(s=>`${MONTHS[s.month].toUpperCase()} ${s.year}`))].join(', ');
+  const tot=subs.reduce((a,b)=>a+b.totalPay,0);
+  const mainRows=subs.map((s,i)=>`<tr><td style="padding:7px 11px;border:1px solid #ddd">${i+1}</td><td style="padding:7px 11px;border:1px solid #ddd">${s.name}</td><td style="padding:7px 11px;border:1px solid #ddd">${s.admin}</td><td style="padding:7px 11px;border:1px solid #ddd">${s.location}</td><td style="padding:7px 11px;border:1px solid #ddd">${s.bank||'—'}</td><td style="padding:7px 11px;border:1px solid #ddd">${s.account||'—'}</td><td style="padding:7px 11px;border:1px solid #ddd;text-align:right">$${s.totalPay.toFixed(2)}</td></tr>`).join('');
+  const bkRows=subs.map(s=>{
+    const hh=s.rows.map(r=>`<tr><td style="padding:5px 10px;border:1px solid #eee"></td><td style="padding:5px 10px;border:1px solid #eee">${r.day}${ord(r.day)} ${DAYS[new Date(s.year,s.month,r.day).getDay()]}</td><td style="padding:5px 10px;border:1px solid #eee">${r.start}</td><td style="padding:5px 10px;border:1px solid #eee">${r.end}</td><td style="padding:5px 10px;border:1px solid #eee">${r.hours.toFixed(1)}h</td><td style="padding:5px 10px;border:1px solid #eee">${r.remark||''}</td></tr>`).join('');
+    return`<tr class="ep-breakdown-header"><td colspan="6" style="padding:7px 11px;border:1px solid #ddd;background:#f0f4ff;font-weight:600">${s.name} (${s.admin}) — ${MONTHS[s.month]} ${s.year} &nbsp;|&nbsp; ${s.totalHrs.toFixed(1)}h @ $${s.rate}/hr = <strong>$${s.totalPay.toFixed(2)}</strong></td></tr>${hh}`;
+  }).join('');
+  return `<p>Dear {FIN STAFF},</p><p>Hope this email finds you well.</p>
+  <p>We would like to request payment for the following student helper(s) working in <strong>${locs}</strong> for <strong>${periods}</strong>:<br><em>(Approval email(s) from [Staff] attached)</em></p>
+  <table class="ep-table"><thead><tr><th>#</th><th>Name</th><th>Admin No.</th><th>Location</th><th>Bank</th><th>Account / NRIC</th><th>Amount</th></tr></thead>
+  <tbody>${mainRows}</tbody>
+  <tfoot><tr class="total-row"><td colspan="6" style="padding:7px 11px;border:1px solid #ddd;text-align:right;font-weight:bold">Total Payment</td><td style="padding:7px 11px;border:1px solid #ddd;text-align:right;font-weight:bold">$${tot.toFixed(2)}</td></tr></tfoot></table>
+  <p><strong>Workday Chargeable:</strong></p>
+  <table class="ep-table" style="max-width:520px"><tr><td style="padding:6px 11px;border:1px solid #ddd;background:#f9f9f9;width:200px"><b>Fund</b></td><td style="padding:6px 11px;border:1px solid #ddd">SPO_DCG0001 SPO General Fund</td></tr><tr><td style="padding:6px 11px;border:1px solid #ddd;background:#f9f9f9"><b>Ledger Account</b></td><td style="padding:6px 11px;border:1px solid #ddd">284100 Student-related Expenses</td></tr><tr><td style="padding:6px 11px;border:1px solid #ddd;background:#f9f9f9"><b>Spend Category</b></td><td style="padding:6px 11px;border:1px solid #ddd">284108SC – Student Teaching Supplies</td></tr><tr><td style="padding:6px 11px;border:1px solid #ddd;background:#f9f9f9"><b>Cost Centre</b></td><td style="padding:6px 11px;border:1px solid #ddd">SPO24 Dept Academic Quality &amp; Resources</td></tr></table>
+  <p><strong>Hours Breakdown:</strong></p>
+  <table class="ep-table"><thead><tr><th></th><th>Date</th><th>Start</th><th>End</th><th>Net Hours</th><th>Remark</th></tr></thead><tbody>${bkRows}</tbody></table>
+  <p>Thank you for your assistance.</p><p>Best regards,<br>[Your Name]<br>[Designation]<br>SPO24 Dept Academic Quality &amp; Resources</p>`;
+}
+
+// ─── EMAIL MODAL OPENERS ───
+let _roSubs=[],_finSubs=[];
+
+function openEmailRO(id){const sub=submissions.find(s=>s.id===id);if(!sub)return;_roSubs=[sub];document.getElementById('ro_subject').value=`[For Approval] Student Helper Payment — ${sub.name} (${MONTHS[sub.month]} ${sub.year})`;document.getElementById('ro_preview').innerHTML=buildROHTML([sub]);openModal('modal-email-ro');}
+function openBulkEmailRO(){const ids=getSelIds();_roSubs=submissions.filter(s=>ids.includes(s.id));if(!_roSubs.length)return;const ps=[...new Set(_roSubs.map(s=>`${MONTHS[s.month]} ${s.year}`))].join(', ');document.getElementById('ro_subject').value=`[For Approval] Student Helper Payment(s) — ${ps}`;document.getElementById('ro_preview').innerHTML=buildROHTML(_roSubs);openModal('modal-email-ro');}
+function sendEmailRO(){const to=document.getElementById('ro_email').value,subj=document.getElementById('ro_subject').value,body=document.getElementById('ro_preview').innerText;window.location.href=`mailto:${to}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;}
+
+function openEmailFin(id){const sub=submissions.find(s=>s.id===id);if(!sub)return;_finSubs=[sub];document.getElementById('fin_subject').value=`Payment Request — Student Helper ${sub.name} (${MONTHS[sub.month]} ${sub.year})`;document.getElementById('fin_preview').innerHTML=buildFinHTML([sub]);openModal('modal-email-fin');}
+function openBulkEmailFin(){const ids=getSelIds();_finSubs=submissions.filter(s=>ids.includes(s.id));if(!_finSubs.length)return;const ps=[...new Set(_finSubs.map(s=>`${MONTHS[s.month]} ${s.year}`))].join(', ');document.getElementById('fin_subject').value=`Payment Request — Student Helpers (${ps})`;document.getElementById('fin_preview').innerHTML=buildFinHTML(_finSubs);openModal('modal-email-fin');}
+function sendEmailFin(){const to=document.getElementById('fin_email').value,subj=document.getElementById('fin_subject').value,body=document.getElementById('fin_preview').innerText;window.location.href=`mailto:${to}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;}
+
+// ─── SETTINGS ───
+function saveRate(){hourlyRate=parseFloat(document.getElementById('hourlyRate').value)||11;showToast('✅',`Rate set to $${hourlyRate}/hr`);updTotals();}
+function loadSignature(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{staffSig=ev.target.result;const p=document.getElementById('sigPreview');p.src=staffSig;p.style.display='block';document.getElementById('sigZoneText').textContent='Signature loaded ✓';showToast('✅','Signature uploaded!');};r.readAsDataURL(f);}
+function testSpConnection(){showToast('🔗','Requires live SharePoint environment.');}
+
+// ─── TABS / TOAST ───
+function switchTab(n,btn){document.querySelectorAll('.staff-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.staff-tab-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('tab-'+n).classList.add('active');}
+function showToast(icon,msg){const t=document.getElementById('toast');document.getElementById('toastIcon').textContent=icon;document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+
+// ─── INIT ───
+setDefaultMonth();buildTimesheetTable();
+</script>
+</body>
+</html>
