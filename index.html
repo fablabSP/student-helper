@@ -209,7 +209,7 @@ select.form-input{cursor:pointer;}
     <div class="topbar-logo">SP</div>
     <div>
       <div class="topbar-title">Student Helper Timesheet</div>
-      <div class="topbar-sub">Singapore Polytechnic · SPO24 &nbsp;·&nbsp; <span class="ver-badge" onclick="openModal('modal-changelog')">v1.4</span></div>
+      <div class="topbar-sub">Singapore Polytechnic · SPO24 &nbsp;·&nbsp; <span class="ver-badge" onclick="openModal('modal-changelog')">v1.5</span></div>
     </div>
   </div>
   <div class="topbar-actions">
@@ -483,9 +483,24 @@ select.form-input{cursor:pointer;}
 
       <div class="cl-version current">
         <div class="cl-ver-header">
-          <span class="cl-tag">v1.4</span>
+          <span class="cl-tag">v1.5</span>
           <span class="cl-date">Mar 2026</span>
           <span class="cl-label latest">Latest</span>
+        </div>
+        <ul class="cl-items">
+          <li>SharePoint integration via Power Automate (Flow 1: Save, Flow 2: Get All, Flow 3: Update Status)</li>
+          <li>Staff dashboard loads live data from SharePoint on login</li>
+          <li>Student submissions saved to SharePoint in real-time</li>
+          <li>Approve / Revoke syncs status to SharePoint via lightweight Flow 3</li>
+          <li>Amend saves full updated submission back to SharePoint</li>
+          <li>localStorage kept as offline fallback if SharePoint is unreachable</li>
+        </ul>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-ver-header">
+          <span class="cl-tag">v1.4</span>
+          <span class="cl-date">Mar 2026</span>
         </div>
         <ul class="cl-items">
           <li>Approval now auto-stamps with staff signature and date/time</li>
@@ -570,8 +585,77 @@ select.form-input{cursor:pointer;}
 <script>
 const STAFF_CODE='SPO24STAFF';
 let currentUser=null,hourlyRate=11,staffSig=null,isLight=false,amendingId=null,detailId=null;
-let submissions=JSON.parse(localStorage.getItem('ts_v2')||'[]');
-function saveDB(){try{localStorage.setItem('ts_v2',JSON.stringify(submissions));}catch(e){}}
+let submissions=[];
+
+// ─── POWER AUTOMATE FLOWS ───
+const PA={
+  save:   'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/01e8fe298b9649a59cd9ca2e4082005e/triggers/manual/paths/invoke?api-version=1',
+  getAll: 'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f75ead49610d4ff8a19e6d7370c69683/triggers/manual/paths/invoke?api-version=1',
+  update: 'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5bd6ead0b940485893f6cc7e9d0d2b6c/triggers/manual/paths/invoke?api-version=1'
+};
+
+// Flow 1 — save/update a full submission
+async function saveDB(sub){
+  try{localStorage.setItem('ts_v2',JSON.stringify(submissions));}catch(e){}
+  if(!sub)return;
+  try{
+    const r=await fetch(PA.save,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        id:String(sub.id), name:sub.name, admin:sub.admin,
+        course:sub.course||'', bank:sub.bank||'', account:sub.account||'',
+        location:sub.location, month:sub.month, year:sub.year,
+        totalHrs:sub.totalHrs, rate:sub.rate, totalPay:sub.totalPay,
+        status:sub.status, rowsJSON:JSON.stringify(sub.rows),
+        submittedAt:sub.submittedAt||'', approvedAt:sub.approvedAt||'', approvedBy:sub.approvedBy||''
+      })
+    });
+    if(!r.ok)throw new Error('HTTP '+r.status);
+  }catch(e){console.error('saveDB:',e);showToast('⚠️','Saved locally — SharePoint sync failed.');}
+}
+
+// Flow 2 — load all submissions
+async function loadDB(){
+  try{
+    const r=await fetch(PA.getAll,{method:'GET',headers:{'Content-Type':'application/json'}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const items=await r.json();
+    submissions=[];
+    (Array.isArray(items)?items:[]).forEach(item=>{
+      try{
+        submissions.push({
+          id:Number(item.Title), name:item.StudentName||'', admin:item.AdminNo||'',
+          course:item.Course||'', bank:item.Bank||'', account:item.AccountNRIC||'',
+          location:item.Location||'', month:Number(item.Month), year:Number(item.Year),
+          totalHrs:Number(item.TotalHours||0), rate:Number(item.Rate||11), totalPay:Number(item.TotalPay||0),
+          status:item.Status||'pending', rows:JSON.parse(item.RowsJSON||'[]'),
+          submittedAt:item.SubmittedAt||'', approvedAt:item.ApprovedAt||'', approvedBy:item.ApprovedBy||''
+        });
+      }catch(e){console.warn('Row parse error:',e);}
+    });
+    try{localStorage.setItem('ts_v2',JSON.stringify(submissions));}catch(e){}
+    return true;
+  }catch(e){
+    console.error('loadDB:',e);
+    submissions=JSON.parse(localStorage.getItem('ts_v2')||'[]');
+    showToast('⚠️','Loaded from local cache — SharePoint unreachable.');
+    return false;
+  }
+}
+
+// Flow 3 — update status only (approve/revoke)
+async function updateStatusDB(sub){
+  try{localStorage.setItem('ts_v2',JSON.stringify(submissions));}catch(e){}
+  try{
+    const r=await fetch(PA.update,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:String(sub.id),status:sub.status,approvedAt:sub.approvedAt||'',approvedBy:sub.approvedBy||''})
+    });
+    if(!r.ok)throw new Error('HTTP '+r.status);
+  }catch(e){console.error('updateStatusDB:',e);showToast('⚠️','Status saved locally — SharePoint sync failed.');}
+}
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const TIMES=[];
@@ -598,12 +682,15 @@ function studentLogin(){
   setDefaultMonth();buildTimesheetTable();showView('student');
 }
 
-function staffLogin(){
+async function staffLogin(){
   if(document.getElementById('staff_code').value.trim()!==STAFF_CODE){
     document.getElementById('staff_error').classList.add('show');
     document.getElementById('staff_code').value='';return;
   }
-  currentUser={type:'staff'};closeModal('modal-staff-login');renderStaffDash();showView('staff');
+  currentUser={type:'staff'};closeModal('modal-staff-login');showView('staff');
+  document.getElementById('submissionList').innerHTML='<div class="card" style="text-align:center;color:var(--text2);padding:48px">⏳ Loading from SharePoint…</div>';
+  await loadDB();
+  renderStaffDash();
 }
 
 // ─── SG PUBLIC HOLIDAYS (MOM official gazetted dates only) ───
@@ -783,13 +870,16 @@ function openSubmitConfirm(){
   openModal('modal-submit-confirm');
 }
 
-function confirmSubmit(){
+async function confirmSubmit(){
   const mo=+document.getElementById('s_month').value,yr=+document.getElementById('s_year').value;
   const rows=[];for(let d=1;d<=getDIM();d++){const r=getRow(d);if(r)rows.push(r);}
   const hrs=rows.reduce((a,b)=>a+b.hours,0),rt=parseFloat(document.getElementById('hourlyRate')?.value||11)||11;
   const sub={id:Date.now(),name:document.getElementById('s_name').value||'Student',admin:document.getElementById('s_admin').value||'P00000000',course:document.getElementById('s_course').value||'',bank:document.getElementById('s_bank').value||'',account:document.getElementById('s_account').value||'',location:document.getElementById('s_location').value,month:mo,year:yr,rows,totalHrs:hrs,rate:rt,totalPay:hrs*rt,status:'pending',submittedAt:new Date().toISOString()};
   submissions=submissions.filter(s=>!(s.admin===sub.admin&&s.month===mo&&s.year===yr));
-  submissions.push(sub);saveDB();closeModal('modal-submit-confirm');showToast('✅','Timesheet submitted!');checkExistingSub(mo,yr);
+  submissions.push(sub);
+  showToast('⏳','Submitting…');
+  await saveDB(sub);
+  closeModal('modal-submit-confirm');showToast('✅','Timesheet submitted!');checkExistingSub(mo,yr);
 }
 
 function checkExistingSub(mo,yr){
@@ -850,19 +940,31 @@ function renderSubList(){
   }).join('');
 }
 
-function approveSub(id){
+async function approveSub(id){
   const s=submissions.find(x=>x.id===id);
   if(s){
     s.status='approved';
     s.approvedAt=new Date().toISOString();
-    s.approvedBy='Staff'; // could be expanded to store staff name
-    saveDB();renderStaffDash();
-    // Refresh detail modal if it's open for this submission
+    s.approvedBy='Staff';
+    showToast('⏳','Saving…');
+    await updateStatusDB(s);
+    renderStaffDash();
     if(detailId===id)openDetail(id);
     showToast('✅','Approved & verified!');
   }
 }
-function rejectSub(id){const s=submissions.find(s=>s.id===id);if(s){s.status='rejected';delete s.approvedAt;delete s.approvedBy;saveDB();renderStaffDash();if(detailId===id)openDetail(id);showToast('❌','Revoked.');}}
+async function rejectSub(id){
+  const s=submissions.find(s=>s.id===id);
+  if(s){
+    s.status='rejected';
+    delete s.approvedAt;delete s.approvedBy;
+    showToast('⏳','Saving…');
+    await updateStatusDB(s);
+    renderStaffDash();
+    if(detailId===id)openDetail(id);
+    showToast('❌','Revoked.');
+  }
+}
 
 // ─── DETAIL VIEW ───
 function openDetail(id){
@@ -940,7 +1042,7 @@ function openAmend(id){
   openModal('modal-amend');
 }
 
-function saveAmend(){
+async function saveAmend(){
   const sub=submissions.find(s=>s.id===amendingId);if(!sub)return;
   const dim=new Date(sub.year,sub.month+1,0).getDate(),rows=[];
   for(let d=1;d<=dim;d++){
@@ -951,7 +1053,9 @@ function saveAmend(){
     rows.push({day:d,start:s,end:e,hours:diff/60,remark:document.getElementById(`ar_${d}`).value});
   }
   sub.rows=rows;sub.totalHrs=rows.reduce((a,b)=>a+b.hours,0);sub.totalPay=sub.totalHrs*sub.rate;
-  saveDB();closeModal('modal-amend');renderStaffDash();showToast('✅','Amended!');
+  showToast('⏳','Saving…');
+  await saveDB(sub);
+  closeModal('modal-amend');renderStaffDash();showToast('✅','Amended!');
 }
 
 // ─── FY ───
