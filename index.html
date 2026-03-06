@@ -494,6 +494,7 @@ select.form-input{cursor:pointer;}
           <li>Approve / Revoke syncs status to SharePoint via lightweight Flow 3</li>
           <li>Amend saves full updated submission back to SharePoint</li>
           <li>localStorage kept as offline fallback if SharePoint is unreachable</li>
+          <li>Time range updated: starts 08:00, defaults to 08:30–18:00, ends 22:00</li>
         </ul>
       </div>
 
@@ -566,7 +567,7 @@ select.form-input{cursor:pointer;}
         <ul class="cl-items">
           <li>Initial release — student &amp; staff portal</li>
           <li>Monthly timesheet with date auto-population from month selector</li>
-          <li>Per-row time slots (09:00–17:00), auto lunch deduction for shifts ≥5h</li>
+          <li>Per-row time slots (08:30–18:00), auto lunch deduction for shifts ≥5h</li>
           <li>Submit confirmation modal with SP Policy warning</li>
           <li>Staff login via secret code</li>
           <li>Weekend rows greyed out and non-selectable</li>
@@ -589,9 +590,9 @@ let submissions=[];
 
 // ─── POWER AUTOMATE FLOWS ───
 const PA={
-  save:   'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/01e8fe298b9649a59cd9ca2e4082005e/triggers/manual/paths/invoke?api-version=1',
-  getAll: 'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f75ead49610d4ff8a19e6d7370c69683/triggers/manual/paths/invoke?api-version=1',
-  update: 'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5bd6ead0b940485893f6cc7e9d0d2b6c/triggers/manual/paths/invoke?api-version=1'
+  save:   'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/01e8fe298b9649a59cd9ca2e4082005e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=9TtkQ9tp4GyZO4XMeZJ_hXUegoY6rZYHXOMM3-BboQc',
+  getAll: 'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f75ead49610d4ff8a19e6d7370c69683/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=DGUjBuUR_Yw2NN5C8jemA2rqomeB5L-c-tOg6N4D0xE',
+  update: 'https://default7604ff02abd845db8cac550054323f.c9.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5bd6ead0b940485893f6cc7e9d0d2b6c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=c3aGe1PORfTXBEgaOpscrE1khpRM0S-tMSD7IosTWJA'
 };
 
 // Flow 1 — save/update a full submission
@@ -659,7 +660,7 @@ async function updateStatusDB(sub){
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const TIMES=[];
-for(let h=6;h<=22;h++){TIMES.push(pad(h)+':00');if(h<22)TIMES.push(pad(h)+':30');}
+for(let h=8;h<=22;h++){TIMES.push(pad(h)+':00');if(h<22)TIMES.push(pad(h)+':30');}
 function pad(n){return String(n).padStart(2,'0');}
 function ord(n){if(n===1||n===21||n===31)return'st';if(n===2||n===22)return'nd';if(n===3||n===23)return'rd';return'th';}
 
@@ -796,8 +797,8 @@ function buildTimesheetTable(){
         <span style="color:${blocked?'var(--text3)':'var(--text2)'}">${dn}</span>
         ${dateCellExtra}
       </td>
-      <td><select class="time-select" id="st_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='09:00'?' selected':''}>${t}</option>`).join('')}</select></td>
-      <td><select class="time-select" id="et_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='17:00'?' selected':''}>${t}</option>`).join('')}</select></td>
+      <td><select class="time-select" id="st_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='08:30'?' selected':''}>${t}</option>`).join('')}</select></td>
+      <td><select class="time-select" id="et_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='18:00'?' selected':''}>${t}</option>`).join('')}</select></td>
       <td><span class="hours-badge none" id="hb_${d}">—</span></td>
       <td><textarea class="remark-input" id="rm_${d}" disabled rows="1" placeholder="Optional remark"></textarea></td>`;
     tb.appendChild(tr);
