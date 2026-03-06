@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SP Student Helper Timesheet</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:#0d0f14;--surface:#141720;--surface2:#1c2030;--surface3:#232840;
@@ -95,6 +95,13 @@ select.form-input{cursor:pointer;}
 .stamp-sig-placeholder{font-size:28px;line-height:1;}
 .stamp-verified{font-size:13px;font-weight:600;color:var(--green);}
 .stamp-date{font-size:11px;color:var(--text2);margin-top:3px;}
+.stamp-cursive{font-family:'Dancing Script',cursive;font-size:28px;color:var(--green);line-height:1.2;border-bottom:1px solid var(--green);padding-bottom:2px;min-width:120px;}
+.signoff-panel{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.signoff-label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+.signoff-row{display:flex;gap:20px;align-items:flex-start;}
+.signoff-preview-wrap{min-width:160px;text-align:center;}
+.signoff-preview-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.sig-cursive-preview{font-family:'Dancing Script',cursive;font-size:32px;color:var(--accent);min-height:44px;border-bottom:1px solid var(--border);padding-bottom:4px;min-width:160px;}
 .ts-row-check{width:16px;height:16px;cursor:pointer;accent-color:var(--accent);}
 .select-all-th{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2);cursor:pointer;}
 .select-all-th input{accent-color:var(--accent);}
@@ -438,6 +445,25 @@ select.form-input{cursor:pointer;}
     </div>
     <div class="ts-totals" id="detailTotals" style="margin-top:14px"></div>
     <div id="detailVerifyStamp" style="display:none;margin-top:14px"></div>
+
+    <!-- Staff sign-off panel — shown only when pending/rejected -->
+    <div id="detailSignPanel" style="display:none;margin-top:16px">
+      <div class="signoff-panel">
+        <div class="signoff-label">Staff Sign-off</div>
+        <div class="signoff-row">
+          <div class="form-group" style="flex:1;margin:0">
+            <label>Your Full Name <span style="color:var(--red)">*</span></label>
+            <input class="form-input" id="staffSignName" placeholder="e.g. Louis Goh" oninput="previewSig()" autocomplete="off">
+            <div class="sig-error" id="sigNameError" style="display:none;color:var(--red);font-size:11px;margin-top:4px">Please enter your name to approve.</div>
+          </div>
+          <div class="signoff-preview-wrap">
+            <div class="signoff-preview-label">Signature Preview</div>
+            <div class="sig-cursive-preview" id="sigCursivePreview">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="flex-end mt-4">
       <button class="btn-secondary" onclick="closeModal('modal-detail')">Close</button>
       <button class="btn-sm" id="detailApproveBtn" style="padding:9px 16px;font-size:12px;display:none"></button>
@@ -952,12 +978,25 @@ function renderSubList(){
   }).join('');
 }
 
-async function approveSub(id){
+function previewSig(){
+  const name=document.getElementById('staffSignName').value.trim();
+  document.getElementById('sigCursivePreview').textContent=name||'—';
+}
+
+async function approveWithName(id){
+  const name=document.getElementById('staffSignName').value.trim();
+  const errEl=document.getElementById('sigNameError');
+  if(!name){errEl.style.display='block';document.getElementById('staffSignName').focus();return;}
+  errEl.style.display='none';
+  await approveSub(id,name);
+}
+
+async function approveSub(id,staffName){
   const s=submissions.find(x=>x.id===id);
   if(s){
     s.status='approved';
     s.approvedAt=new Date().toISOString();
-    s.approvedBy='Staff';
+    s.approvedBy=staffName||s.approvedBy||'Staff';
     showToast('⏳','Saving…');
     await updateStatusDB(s);
     renderStaffDash();
@@ -1007,11 +1046,15 @@ function openDetail(id){
   const stampEl=document.getElementById('detailVerifyStamp');
   if(appr&&sub.approvedAt){
     const d=new Date(sub.approvedAt);
+    const sigName=sub.approvedBy&&sub.approvedBy!=='Staff'?sub.approvedBy:'';
     stampEl.innerHTML=`
       <div class="verify-stamp">
-        ${staffSig?`<img src="${staffSig}" class="stamp-sig">`:'<div class="stamp-sig-placeholder">✍️ Signed</div>'}
-        <div class="stamp-text">
-          <div class="stamp-verified">✅ Verified by Staff</div>
+        <div style="flex:1">
+          ${sigName?`<div class="stamp-cursive">${sigName}</div>`:(staffSig?`<img src="${staffSig}" class="stamp-sig">`:'<div class="stamp-sig-placeholder">✍️</div>')}
+        </div>
+        <div class="stamp-text" style="flex:2">
+          <div class="stamp-verified">✅ Verified &amp; Approved</div>
+          ${sigName?`<div class="stamp-date" style="font-weight:600;color:var(--text1)">${sigName}</div>`:''}
           <div class="stamp-date">Approved on ${d.toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'})} at ${d.toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
       </div>`;
@@ -1019,13 +1062,24 @@ function openDetail(id){
   } else {
     stampEl.innerHTML='';stampEl.style.display='none';
   }
-  // Approve button in footer
+  // Sign-off panel — show when not yet approved
+  const signPanel=document.getElementById('detailSignPanel');
+  const nameInput=document.getElementById('staffSignName');
+  if(!appr){
+    signPanel.style.display='block';
+    nameInput.value='';
+    document.getElementById('sigCursivePreview').textContent='—';
+    document.getElementById('sigNameError').style.display='none';
+  } else {
+    signPanel.style.display='none';
+  }
+  // Approve/Revoke button
   const approveBtn=document.getElementById('detailApproveBtn');
   if(!appr){
     approveBtn.style.display='inline-flex';
     approveBtn.textContent='✅ Approve';
     approveBtn.className='btn-sm btn-approve';
-    approveBtn.onclick=()=>{approveSub(id);};
+    approveBtn.onclick=()=>approveWithName(id);
   } else {
     approveBtn.style.display='inline-flex';
     approveBtn.textContent='↩ Revoke';
@@ -1101,25 +1155,27 @@ function exportPDF(id){
   // Verification stamp — only shown when approved
   let sigSection='';
   if(sub.status==='approved'){
-    const approvedDate=sub.approvedAt?new Date(sub.approvedAt).toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
-    const sigImg=staffSig?`<img src="${staffSig}" style="max-height:56px;max-width:180px;display:block;margin-bottom:6px">`:'<div style="font-size:22px;margin-bottom:6px">✍️</div>';
+    const approvedDate=sub.approvedAt?new Date(sub.approvedAt).toLocaleString('en-SG',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    const sigName=sub.approvedBy&&sub.approvedBy!=='Staff'?sub.approvedBy:'';
+    const sigDisplay=sigName
+      ?`<div style="font-family:'Dancing Script',cursive;font-size:36px;color:#1a3a6b;line-height:1.2;border-bottom:2px solid #1a3a6b;padding-bottom:4px;min-width:200px;display:inline-block">${sigName}</div>`
+      :(staffSig?`<img src="${staffSig}" style="max-height:56px;max-width:180px;display:block;margin-bottom:6px">`:'<div style="border-bottom:2px solid #1a3a6b;width:200px;margin-top:40px"></div>');
     sigSection=`
     <div style="margin-top:32px;border-top:1px solid #ccc;padding-top:20px;display:flex;align-items:flex-start;gap:32px">
       <div style="flex:1">
-        <p style="font-size:11px;font-weight:bold;margin-bottom:8px">VERIFIED & APPROVED BY:</p>
-        ${sigImg}
-        <div style="border-bottom:1px solid #333;width:180px;margin-bottom:4px"></div>
-        <p style="font-size:10px;color:#555">Authorised Staff Signature</p>
-        <p style="font-size:10px;color:#555;margin-top:4px">Date: ${approvedDate}</p>
+        <p style="font-size:11px;font-weight:bold;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Verified &amp; Approved By:</p>
+        ${sigDisplay}
+        ${sigName?`<div style="font-size:11px;color:#333;margin-top:6px;font-weight:600">${sigName}</div>`:''}
+        <div style="font-size:10px;color:#666;margin-top:4px">Date: ${approvedDate}</div>
       </div>
       <div style="flex:1">
-        <p style="font-size:11px;font-weight:bold;margin-bottom:8px">STUDENT ACKNOWLEDGEMENT:</p>
-        <div style="border-bottom:1px solid #333;width:180px;margin-bottom:4px;margin-top:40px"></div>
-        <p style="font-size:10px;color:#555">Student Signature / Date</p>
+        <p style="font-size:11px;font-weight:bold;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Student Acknowledgement:</p>
+        <div style="border-bottom:1px solid #333;width:180px;margin-top:40px;margin-bottom:4px"></div>
+        <p style="font-size:10px;color:#666">Student Signature / Date</p>
       </div>
     </div>
     <div style="margin-top:12px;padding:8px 12px;background:#f0f7f0;border:1px solid #4caf50;border-radius:4px;font-size:10px;color:#2e7d32">
-      ✅ This attendance sheet has been verified and approved by an authorised SP staff member on ${approvedDate}.
+      ✅ This attendance sheet has been verified and approved${sigName?' by '+sigName:''} on ${approvedDate}.
     </div>`;
   } else {
     sigSection=`
@@ -1141,6 +1197,7 @@ function exportPDF(id){
   }
   const html=`<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Attendance Sheet — ${sub.name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
 <style>
   body{font-family:Arial,sans-serif;padding:30px;font-size:12px;color:#222;}
   h2{font-size:15px;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;}
