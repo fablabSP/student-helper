@@ -619,6 +619,9 @@ async function saveDB(sub){
   }catch(e){console.error('saveDB:',e);showToast('⚠️','Saved locally — SharePoint sync failed.');}
 }
 
+// Helper to safely extract value from SharePoint Choice columns (returns {Value:'x'} or plain string)
+function spVal(v){if(!v)return'';if(typeof v==='object')return v.Value||v.value||'';return String(v);}
+
 // Flow 2 — load all submissions
 async function loadDB(){
   try{
@@ -631,9 +634,10 @@ async function loadDB(){
         submissions.push({
           id:Number(item.Title), name:item.StudentName||'', admin:item.AdminNo||'',
           course:item.Course||'', bank:item.Bank||'', account:item.AccountNRIC||'',
-          location:item.Location||item.LocationValue||'', month:Number(item.Month), year:Number(item.Year),
+          location:spVal(item.Location)||spVal(item.LocationValue)||'',
+          month:Number(item.Month), year:Number(item.Year),
           totalHrs:Number(item.TotalHours||0), rate:Number(item.Rate||11), totalPay:Number(item.TotalPay||0),
-          status:String(item.Status||item.StatusValue||'pending').toLowerCase(),
+          status:String(spVal(item.Status)||spVal(item.StatusValue)||'pending').toLowerCase(),
           rows:JSON.parse(item.RowsJSON||'[]'),
           submittedAt:item.SubmittedAt||'', approvedAt:item.ApprovedAt||'', approvedBy:item.ApprovedBy||''
         });
