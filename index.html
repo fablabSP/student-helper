@@ -102,6 +102,7 @@ select.form-input{cursor:pointer;}
 .signoff-preview-wrap{min-width:160px;text-align:center;}
 .signoff-preview-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
 .sig-cursive-preview{font-family:'Dancing Script',cursive;font-size:32px;color:var(--accent);min-height:44px;border-bottom:1px solid var(--border);padding-bottom:4px;min-width:160px;}
+.signoff-role-preview{font-size:11px;color:var(--text3);margin-top:4px;min-height:16px;}
 .ts-row-check{width:16px;height:16px;cursor:pointer;accent-color:var(--accent);}
 .select-all-th{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2);cursor:pointer;}
 .select-all-th input{accent-color:var(--accent);}
@@ -256,11 +257,11 @@ select.form-input{cursor:pointer;}
     <div class="card">
       <div class="card-title">Student Information</div>
       <div class="form-grid">
-        <div class="form-group"><label>Full Name</label><input class="form-input" id="s_name" placeholder="e.g. John Smith"></div>
-        <div class="form-group"><label>Admin Number</label><input class="form-input" id="s_admin" placeholder="e.g. P12345678"></div>
-        <div class="form-group"><label>Year / Course</label><input class="form-input" id="s_course" placeholder="e.g. 2/IT"></div>
-        <div class="form-group"><label>Name of Bank</label><input class="form-input" id="s_bank" placeholder="e.g. DBS PayNow (NRIC/FIN)"></div>
-        <div class="form-group"><label>Bank Account / NRIC</label><input class="form-input" id="s_account" placeholder="e.g. T12345678A"></div>
+        <div class="form-group"><label>Full Name</label><input class="form-input" id="s_name" placeholder="e.g. John Smith" maxlength="40" maxlength="40"></div>
+        <div class="form-group"><label>Admin Number</label><input class="form-input" id="s_admin" placeholder="e.g. P12345678" maxlength="12"></div>
+        <div class="form-group"><label>Year / Course</label><input class="form-input" id="s_course" placeholder="e.g. 2/IT" maxlength="20"></div>
+        <div class="form-group"><label>Name of Bank</label><input class="form-input" id="s_bank" placeholder="e.g. DBS PayNow (NRIC/FIN)" maxlength="40"></div>
+        <div class="form-group"><label>Bank Account / NRIC</label><input class="form-input" id="s_account" placeholder="e.g. T12345678A" maxlength="20"></div>
         <div class="form-group"><label>Location</label>
           <select class="form-input" id="s_location">
             <option value="T11C01">T11C01</option>
@@ -387,8 +388,8 @@ select.form-input{cursor:pointer;}
   <div class="modal">
     <h2>🎓 Student Sign In</h2>
     <div class="modal-sub">Enter your details to access your timesheet</div>
-    <div class="form-group"><label>Admin Number</label><input class="form-input" id="sl_admin" placeholder="e.g. P12345678" onkeydown="if(event.key==='Enter')studentLogin()"></div>
-    <div class="form-group"><label>Full Name</label><input class="form-input" id="sl_name" placeholder="e.g. John Smith" onkeydown="if(event.key==='Enter')studentLogin()"></div>
+    <div class="form-group"><label>Admin Number</label><input class="form-input" id="sl_admin" placeholder="e.g. P12345678" maxlength="12" onkeydown="if(event.key==='Enter')studentLogin()"></div>
+    <div class="form-group"><label>Full Name</label><input class="form-input" id="sl_name" placeholder="e.g. John Smith" maxlength="40" onkeydown="if(event.key==='Enter')studentLogin()"></div>
     <div class="error-msg" id="sl_error">Please enter your Admin Number and Name.</div>
     <button class="btn-primary" onclick="studentLogin()">Continue</button>
     <div class="divider"></div>
@@ -451,14 +452,34 @@ select.form-input{cursor:pointer;}
       <div class="signoff-panel">
         <div class="signoff-label">Staff Sign-off</div>
         <div class="signoff-row">
-          <div class="form-group" style="flex:1;margin:0">
-            <label>Your Full Name <span style="color:var(--red)">*</span></label>
-            <input class="form-input" id="staffSignName" placeholder="e.g. Louis Goh" oninput="previewSig()" autocomplete="off">
-            <div class="sig-error" id="sigNameError" style="display:none;color:var(--red);font-size:11px;margin-top:4px">Please enter your name to approve.</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+            <div class="form-group" style="margin:0">
+              <label>Your Full Name <span style="color:var(--red)">*</span></label>
+              <input class="form-input" id="staffSignName" placeholder="e.g. John Tan" maxlength="40" oninput="previewSig()" autocomplete="off">
+              <div class="sig-error" id="sigNameError" style="display:none;color:var(--red);font-size:11px;margin-top:4px">Please enter your name to approve.</div>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>Your Role <span style="color:var(--red)">*</span></label>
+              <select class="form-input" id="staffSignRole" onchange="toggleCustomRole();previewSig()">
+                <option value="">— Select role —</option>
+                <option value="Manager">Manager</option>
+                <option value="Deputy Manager">Deputy Manager</option>
+                <option value="Lead Technical Executive">Lead Technical Executive</option>
+                <option value="Senior Technical Executive">Senior Technical Executive</option>
+                <option value="Technical Executive">Technical Executive</option>
+                <option value="__other__">Other (specify below)</option>
+              </select>
+              <div class="sig-error" id="sigRoleError" style="display:none;color:var(--red);font-size:11px;margin-top:4px">Please select your role to approve.</div>
+            </div>
+            <div class="form-group" id="customRoleWrap" style="margin:0;display:none">
+              <label>Specify Role</label>
+              <input class="form-input" id="staffSignRoleCustom" placeholder="e.g. Specialist" maxlength="40" oninput="previewSig()">
+            </div>
           </div>
           <div class="signoff-preview-wrap">
             <div class="signoff-preview-label">Signature Preview</div>
             <div class="sig-cursive-preview" id="sigCursivePreview">—</div>
+            <div class="signoff-role-preview" id="sigRolePreview"></div>
           </div>
         </div>
       </div>
@@ -683,7 +704,7 @@ async function loadDB(){
 async function updateStatusDB(sub){
   try{localStorage.setItem('ts_v2',JSON.stringify(submissions));}catch(e){}
   try{
-    const payload={id:String(sub.id), status:sub.status, approvedBy:sub.approvedBy||''};
+    const payload={id:String(sub.id), status:sub.status, approvedBy:sub.approvedBy||'', approvedRole:sub.approvedRole||''};
     // Only include approvedAt if it has a value
     if(sub.approvedAt) payload.approvedAt=sub.approvedAt;
     const r=await fetch(PA.update,{
@@ -837,7 +858,7 @@ function buildTimesheetTable(){
       <td><select class="time-select" id="st_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='09:00'?' selected':''}>${t}</option>`).join('')}</select></td>
       <td><select class="time-select" id="et_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='17:00'?' selected':''}>${t}</option>`).join('')}</select></td>
       <td><span class="hours-badge none" id="hb_${d}">—</span></td>
-      <td><textarea class="remark-input" id="rm_${d}" disabled rows="1" placeholder="Optional remark">1 hour lunch</textarea></td>`;
+      <td><textarea class="remark-input" id="rm_${d}" disabled rows="1" placeholder="Optional remark" maxlength="60">1 hour lunch</textarea></td>`;
     tb.appendChild(tr);
   }
   updTotals();checkExistingSub(mo,yr);
@@ -978,25 +999,44 @@ function renderSubList(){
   }).join('');
 }
 
+function toggleCustomRole(){
+  const sel=document.getElementById('staffSignRole');
+  document.getElementById('customRoleWrap').style.display=sel.value==='__other__'?'block':'none';
+}
+
+function getStaffRole(){
+  const sel=document.getElementById('staffSignRole');
+  if(!sel)return'';
+  if(sel.value==='__other__')return document.getElementById('staffSignRoleCustom').value.trim();
+  return sel.value;
+}
+
 function previewSig(){
   const name=document.getElementById('staffSignName').value.trim();
+  const role=getStaffRole();
   document.getElementById('sigCursivePreview').textContent=name||'—';
+  document.getElementById('sigRolePreview').textContent=role||'';
 }
 
 async function approveWithName(id){
   const name=document.getElementById('staffSignName').value.trim();
-  const errEl=document.getElementById('sigNameError');
-  if(!name){errEl.style.display='block';document.getElementById('staffSignName').focus();return;}
-  errEl.style.display='none';
-  await approveSub(id,name);
+  const role=getStaffRole();
+  const nameErr=document.getElementById('sigNameError');
+  const roleErr=document.getElementById('sigRoleError');
+  let valid=true;
+  if(!name){nameErr.style.display='block';valid=false;}else{nameErr.style.display='none';}
+  if(!role){roleErr.style.display='block';valid=false;}else{roleErr.style.display='none';}
+  if(!valid){return;}
+  await approveSub(id,name,role);
 }
 
-async function approveSub(id,staffName){
+async function approveSub(id,staffName,staffRole){
   const s=submissions.find(x=>x.id===id);
   if(s){
     s.status='approved';
     s.approvedAt=new Date().toISOString();
     s.approvedBy=staffName||s.approvedBy||'Staff';
+    s.approvedRole=staffRole||s.approvedRole||'';
     showToast('⏳','Saving…');
     await updateStatusDB(s);
     renderStaffDash();
@@ -1047,6 +1087,7 @@ function openDetail(id){
   if(appr&&sub.approvedAt){
     const d=new Date(sub.approvedAt);
     const sigName=sub.approvedBy&&sub.approvedBy!=='Staff'?sub.approvedBy:'';
+    const sigRole=sub.approvedRole||'';
     stampEl.innerHTML=`
       <div class="verify-stamp">
         <div style="flex:1">
@@ -1055,6 +1096,7 @@ function openDetail(id){
         <div class="stamp-text" style="flex:2">
           <div class="stamp-verified">✅ Verified &amp; Approved</div>
           ${sigName?`<div class="stamp-date" style="font-weight:600;color:var(--text1)">${sigName}</div>`:''}
+          ${sigRole?`<div class="stamp-date">${sigRole}</div>`:''}
           <div class="stamp-date">Approved on ${d.toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'})} at ${d.toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
       </div>`;
@@ -1064,12 +1106,16 @@ function openDetail(id){
   }
   // Sign-off panel — show when not yet approved
   const signPanel=document.getElementById('detailSignPanel');
-  const nameInput=document.getElementById('staffSignName');
   if(!appr){
     signPanel.style.display='block';
-    nameInput.value='';
+    document.getElementById('staffSignName').value='';
+    document.getElementById('staffSignRole').value='';
+    document.getElementById('staffSignRoleCustom').value='';
+    document.getElementById('customRoleWrap').style.display='none';
     document.getElementById('sigCursivePreview').textContent='—';
+    document.getElementById('sigRolePreview').textContent='';
     document.getElementById('sigNameError').style.display='none';
+    document.getElementById('sigRoleError').style.display='none';
   } else {
     signPanel.style.display='none';
   }
@@ -1102,7 +1148,7 @@ function openAmend(id){
       <td><select class="time-select" id="as_${d}" style="width:80px">${TIMES.map(t=>`<option${r&&r.start===t?' selected':''}>${t}</option>`).join('')}</select></td>
       <td><select class="time-select" id="ae_${d}" style="width:80px">${TIMES.map(t=>`<option${r&&r.end===t?' selected':''}>${t}</option>`).join('')}</select></td>
       <td style="font-family:var(--mono);font-size:12px">${r?r.hours.toFixed(1)+'h':'—'}</td>
-      <td><input class="form-input" style="font-size:12px;padding:5px 8px" value="${r?r.remark:''}" id="ar_${d}"></td>`;
+      <td><input class="form-input" style="font-size:12px;padding:5px 8px" maxlength="60" value="${r?r.remark:''}" id="ar_${d}"></td>`;
     tb.appendChild(tr);
   }
   openModal('modal-amend');
@@ -1157,6 +1203,7 @@ function exportPDF(id){
   if(sub.status==='approved'){
     const approvedDate=sub.approvedAt?new Date(sub.approvedAt).toLocaleString('en-SG',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
     const sigName=sub.approvedBy&&sub.approvedBy!=='Staff'?sub.approvedBy:'';
+    const sigRole=sub.approvedRole||'';
     const sigDisplay=sigName
       ?`<div style="font-family:'Dancing Script',cursive;font-size:36px;color:#1a3a6b;line-height:1.2;border-bottom:2px solid #1a3a6b;padding-bottom:4px;min-width:200px;display:inline-block">${sigName}</div>`
       :(staffSig?`<img src="${staffSig}" style="max-height:56px;max-width:180px;display:block;margin-bottom:6px">`:'<div style="border-bottom:2px solid #1a3a6b;width:200px;margin-top:40px"></div>');
@@ -1165,7 +1212,8 @@ function exportPDF(id){
       <div style="flex:1">
         <p style="font-size:11px;font-weight:bold;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Verified &amp; Approved By:</p>
         ${sigDisplay}
-        ${sigName?`<div style="font-size:11px;color:#333;margin-top:6px;font-weight:600">${sigName}</div>`:''}
+        ${sigName?`<div style="font-size:12px;color:#333;margin-top:6px;font-weight:600">${sigName}</div>`:''}
+        ${sigRole?`<div style="font-size:11px;color:#555;margin-top:2px">${sigRole}</div>`:''}
         <div style="font-size:10px;color:#666;margin-top:4px">Date: ${approvedDate}</div>
       </div>
       <div style="flex:1">
@@ -1175,7 +1223,7 @@ function exportPDF(id){
       </div>
     </div>
     <div style="margin-top:12px;padding:8px 12px;background:#f0f7f0;border:1px solid #4caf50;border-radius:4px;font-size:10px;color:#2e7d32">
-      ✅ This attendance sheet has been verified and approved${sigName?' by '+sigName:''} on ${approvedDate}.
+      ✅ This attendance sheet has been verified and approved${sigName?' by '+sigName+(sigRole?', '+sigRole:''):''}  on ${approvedDate}.
     </div>`;
   } else {
     sigSection=`
@@ -1232,6 +1280,8 @@ function exportPDF(id){
   </table>
   ${sigSection}
   <p style="margin-top:16px;font-size:9px;color:#aaa">Auto-generated by SP Student Helper Timesheet System. Falsification of entries is against SP Student Code of Conduct. Printed: ${new Date().toLocaleString('en-SG')}</p>
+
+<div style="position:fixed;bottom:18px;right:10px;font-size:9px;color:var(--text3);opacity:0.3;user-select:none;pointer-events:none;letter-spacing:0.3px;">Student Timesheet v1.5 · © 2026 Louis Goh, SP FabLab</div>
 </body></html>`;
   // Use Blob URL — avoids document.write issues in modern browsers/Teams
   const blob=new Blob([html],{type:'text/html'});
@@ -1304,5 +1354,7 @@ function showToast(icon,msg){const t=document.getElementById('toast');document.g
 // ─── INIT ───
 setDefaultMonth();buildTimesheetTable();
 </script>
+
+<div style="position:fixed;bottom:18px;right:10px;font-size:9px;color:var(--text3);opacity:0.3;user-select:none;pointer-events:none;letter-spacing:0.3px;">Student Timesheet v1.5 · © 2026 Louis Goh, SP FabLab</div>
 </body>
 </html>
