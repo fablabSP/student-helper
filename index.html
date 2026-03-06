@@ -660,7 +660,7 @@ async function updateStatusDB(sub){
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const TIMES=[];
-for(let h=8;h<=22;h++){TIMES.push(pad(h)+':00');if(h<22)TIMES.push(pad(h)+':30');}
+for(let h=8;h<=19;h++){if(h===8){TIMES.push('08:30');}else{TIMES.push(pad(h)+':00');if(h<19)TIMES.push(pad(h)+':30');}}
 function pad(n){return String(n).padStart(2,'0');}
 function ord(n){if(n===1||n===21||n===31)return'st';if(n===2||n===22)return'nd';if(n===3||n===23)return'rd';return'th';}
 
@@ -797,10 +797,10 @@ function buildTimesheetTable(){
         <span style="color:${blocked?'var(--text3)':'var(--text2)'}">${dn}</span>
         ${dateCellExtra}
       </td>
-      <td><select class="time-select" id="st_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='08:30'?' selected':''}>${t}</option>`).join('')}</select></td>
-      <td><select class="time-select" id="et_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='18:00'?' selected':''}>${t}</option>`).join('')}</select></td>
+      <td><select class="time-select" id="st_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='09:00'?' selected':''}>${t}</option>`).join('')}</select></td>
+      <td><select class="time-select" id="et_${d}" disabled onchange="calcH(${d})">${TIMES.map(t=>`<option${t==='17:00'?' selected':''}>${t}</option>`).join('')}</select></td>
       <td><span class="hours-badge none" id="hb_${d}">—</span></td>
-      <td><textarea class="remark-input" id="rm_${d}" disabled rows="1" placeholder="Optional remark"></textarea></td>`;
+      <td><textarea class="remark-input" id="rm_${d}" disabled rows="1" placeholder="Optional remark">1 hour lunch</textarea></td>`;
     tb.appendChild(tr);
   }
   updTotals();checkExistingSub(mo,yr);
