@@ -631,9 +631,10 @@ async function loadDB(){
         submissions.push({
           id:Number(item.Title), name:item.StudentName||'', admin:item.AdminNo||'',
           course:item.Course||'', bank:item.Bank||'', account:item.AccountNRIC||'',
-          location:item.Location||'', month:Number(item.Month), year:Number(item.Year),
+          location:item.Location||item.LocationValue||'', month:Number(item.Month), year:Number(item.Year),
           totalHrs:Number(item.TotalHours||0), rate:Number(item.Rate||11), totalPay:Number(item.TotalPay||0),
-          status:item.Status||'pending', rows:JSON.parse(item.RowsJSON||'[]'),
+          status:String(item.Status||item.StatusValue||'pending').toLowerCase(),
+          rows:JSON.parse(item.RowsJSON||'[]'),
           submittedAt:item.SubmittedAt||'', approvedAt:item.ApprovedAt||'', approvedBy:item.ApprovedBy||''
         });
       }catch(e){console.warn('Row parse error:',e);}
@@ -895,7 +896,7 @@ function checkExistingSub(mo,yr){
   const el=document.getElementById('sub_status_display');if(!el)return;
   el.innerHTML=sub?`<span class="status-badge status-${sub.status}">${cap(sub.status)}</span>`:`<span class="status-badge" style="background:var(--surface3);color:var(--text3)">Not Submitted</span>`;
 }
-function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function cap(s){if(!s||typeof s!=='string')return'Pending';return s.charAt(0).toUpperCase()+s.slice(1);}
 
 // ─── STAFF DASH ───
 function renderStaffDash(){
